@@ -3,14 +3,15 @@ import { connect } from "react-redux";
 import { compose } from "redux";
 
 import { RootState } from "store";
-import * as FooStore from "store/foo";
+import * as FooStore from "store/facts";
 import { ResAdapter, ErrorType } from "api";
+import { ISportsperson } from "api/query";
 
 export interface StateProps {
-    foos: ResAdapter<string[]>,
+    sportspeople: ResAdapter<ISportsperson[]>,
 }
 export interface ActionProps {
-    fooFetch: typeof FooStore.actions.fooFetch,
+    sportspeopleFetch: typeof FooStore.actions.sportspeopleFetch,
 }
 export interface OwnProps {}
 
@@ -19,14 +20,14 @@ export type TestTwoProps = StateProps & ActionProps & OwnProps;
 export class TestTwo extends React.Component<TestTwoProps> {
 
     public componentWillMount() {
-        this.props.fooFetch();
+        this.props.sportspeopleFetch();
     }
 
     public render() {
-        return this.props.foos
+        return this.props.sportspeople
             .loading(<Loading />)
             .error(error => <ErrorTable error={error} />)
-            .result(foos => <ResultTable foos={foos} />)
+            .result(results => <ResultsTable results={results} />)
             .render();
     }
 }
@@ -34,10 +35,10 @@ export class TestTwo extends React.Component<TestTwoProps> {
 const wrap = compose(
     connect<StateProps, ActionProps, OwnProps, RootState>(
         (state) => ({
-            foos: FooStore.selectors.getFoos(state.foo),
+            sportspeople: new ResAdapter(state.facts.sportspeople),
         }),
         { 
-            fooFetch: FooStore.actions.fooFetch
+            sportspeopleFetch: FooStore.actions.sportspeopleFetch
         }
     )
 );
@@ -76,21 +77,21 @@ function ErrorTable({ error }: ErrorTableProps) {
 }
 
 interface ResultTableProps {
-    foos: string[];
+    results: ISportsperson[];
 }
-function ResultTable({ foos }: ResultTableProps) {
+function ResultsTable({ results }: ResultTableProps) {
     return <>
         <h1>Results</h1>
         <table>
             <thead>
                 <tr>
-                    <th>Foos</th>
+                    <th>Sportspeople</th>
                 </tr>
             </thead>
             <tbody>
-                {foos.map((foo, i) => (
+                {results.map((result, i) => (
                     <tr key={i}>
-                        <td>{foo}</td>
+                        <td>{result.name}</td>
                     </tr>
                 ))}
             </tbody>

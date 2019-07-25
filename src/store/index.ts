@@ -1,15 +1,15 @@
 import { combineReducers, createStore, applyMiddleware } from "redux";
 import createSagaMiddleware from "redux-saga";
 
-import { FooState, reducer as fooReducer } from "./foo";
-import { saga as fooSaga } from "saga/foo";
+import { FactsState, reducer as factsReducer } from "./facts";
+import { saga as fooSaga } from "saga/facts";
 
 export type RootState = {
-    foo: FooState,
+    facts: FactsState,
 }
 
 const rootReducer = combineReducers<RootState>({
-    foo: fooReducer
+    facts: factsReducer
 });
 
 const sagaMiddleware = createSagaMiddleware();

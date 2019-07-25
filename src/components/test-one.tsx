@@ -3,14 +3,15 @@ import { connect } from "react-redux";
 import { compose } from "redux";
 
 import { RootState } from "store";
-import * as FooStore from "store/foo";
+import * as FooStore from "store/facts";
 import { Res } from "api";
+import { ISportsperson } from "api/query";
 
 export interface StateProps {
-    foos: Res<string[]>,
+    sportspeople: Res<ISportsperson[]>,
 }
 export interface ActionProps {
-    fooFetch: typeof FooStore.actions.fooFetch,
+    sportspeopleFetch: typeof FooStore.actions.sportspeopleFetch,
 }
 export interface OwnProps {}
 
@@ -19,18 +20,18 @@ export type TestOneProps = StateProps & ActionProps & OwnProps;
 export class TestOne extends React.Component<TestOneProps> {
 
     public componentWillMount() {
-        this.props.fooFetch();
+        this.props.sportspeopleFetch();
     }
 
     public render() {
-        const { foos } = this.props;
-        if (foos.loading) {
+        const { sportspeople } = this.props;
+        if (sportspeople.loading) {
             return "Loading...";
         }
-        if (foos.error) {
+        if (sportspeople.error) {
             return <>
                 <h1>Error</h1>
-                <p>{foos.error.errorId}</p>
+                <p>{sportspeople.error.errorId}</p>
             </>;
         }
         return <>
@@ -38,13 +39,13 @@ export class TestOne extends React.Component<TestOneProps> {
             <table>
                 <thead>
                     <tr>
-                        <th>Foos</th>
+                        <th>Sportspeople</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {foos.result.map((foo, i) => (
+                    {sportspeople.result.map((person, i) => (
                         <tr key={i}>
-                            <td>{foo}</td>
+                            <td>{person.name}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -56,10 +57,10 @@ export class TestOne extends React.Component<TestOneProps> {
 const wrap = compose(
     connect<StateProps, ActionProps, OwnProps, RootState>(
         (state) => ({
-            foos: state.foo.foos,
+            sportspeople: state.facts.sportspeople,
         }),
         { 
-            fooFetch: FooStore.actions.fooFetch
+            sportspeopleFetch: FooStore.actions.sportspeopleFetch
         }
     )
 );
