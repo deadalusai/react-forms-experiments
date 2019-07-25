@@ -13,7 +13,7 @@ export interface StateProps {
 export interface ActionProps {
     sportspeopleFetch: typeof FooStore.actions.sportspeopleFetch,
 }
-export interface OwnProps {}
+export interface OwnProps { }
 
 export type TestTwoProps = StateProps & ActionProps & OwnProps;
 
@@ -28,7 +28,7 @@ export class TestTwo extends React.Component<TestTwoProps> {
             .loading(<Loading />)
             .error(error => <ErrorTable error={error} />)
             .result(results => <ResultsTable results={results} />)
-            .render();
+            .unwrap();
     }
 }
 
@@ -37,7 +37,7 @@ const wrap = compose(
         (state) => ({
             sportspeople: new ResAdapter(state.facts.sportspeople),
         }),
-        { 
+        {
             sportspeopleFetch: FooStore.actions.sportspeopleFetch
         }
     )
@@ -82,19 +82,22 @@ interface ResultTableProps {
 function ResultsTable({ results }: ResultTableProps) {
     return <>
         <h1>Results</h1>
-        <table>
-            <thead>
-                <tr>
-                    <th>Sportspeople</th>
-                </tr>
-            </thead>
-            <tbody>
-                {results.map((result, i) => (
-                    <tr key={i}>
-                        <td>{result.name}</td>
+        {results.map((result) => (
+            <table key={result.id}>
+                <thead>
+                    <tr>
+                        <th colSpan={2}>{result.name}</th>
                     </tr>
-                ))}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {Object.keys(result.facts).map(key => (
+                        <tr key={key}>
+                            <th>{key}</th>
+                            <td>{result.facts[key]}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        ))}
     </>;
 }

@@ -96,7 +96,7 @@ export class ResFluent<T, TError, TLoading, TResult> {
         return new ResFluent(this._res, { ...this._selectors, result });
     }
 
-    public render(): TError | TLoading | TResult | undefined {
+    public unwrap(): TError | TLoading | TResult | undefined {
         const res = this._res;
         const { error, loading, result } = this._selectors;
         if (res.error) {
