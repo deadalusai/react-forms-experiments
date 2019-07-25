@@ -1,10 +1,14 @@
 import { combineReducers, createStore, applyMiddleware } from "redux";
 import createSagaMiddleware from "redux-saga";
 
-import { reducer as fooReducer } from "./store/foo";
+import { FooState, reducer as fooReducer } from "./foo";
 import { saga as fooSaga } from "saga/foo";
 
-const rootReducer = combineReducers({
+export type RootState = {
+    foo: FooState,
+}
+
+const rootReducer = combineReducers<RootState>({
     foo: fooReducer
 });
 

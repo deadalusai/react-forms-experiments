@@ -1,11 +1,15 @@
 import { SagaIterator } from "redux-saga";
-import { takeLatest, delay, call } from "redux-saga/effects";
+import { takeLatest, delay, put } from "redux-saga/effects";
 
 import * as FooStore from "store/foo";
 
 export function* fooFetch(): SagaIterator {
     yield delay(2000);
-    yield call(FooStore.actions.fooFetchResult, []);
+    const results = [
+        "Hello world",
+        "Goodbye moon"
+    ];
+    yield put(FooStore.actions.fooFetchResult(results));
 }
 
 export function* saga(): SagaIterator {

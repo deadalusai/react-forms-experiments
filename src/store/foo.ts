@@ -1,16 +1,16 @@
 import { ActionsFrom, assertNever } from "util";
-import { ErrorType } from "api";
+import { ErrorType, Res, resResult, resLoading, resError } from "api";
 
 //
 // State
 //
 
 export interface FooState {
-    items: string[];
+    foos: Res<string[]>;
 }
 
 export const initialState: FooState = {
-    items: [],
+    foos: resResult([]),
 };
 
 //
@@ -25,7 +25,7 @@ function fooFetch(): FooFetchAction {
     return { type: FOO_FETCH };
 }
 function fooFetchReducer(state: FooState, _action: FooFetchAction): FooState {
-    return { ...state };
+    return { ...state, foos: resLoading() };
 }
 
 export const FOO_FETCH_ERROR = "FOO:FETCH_ERROR";
@@ -37,7 +37,7 @@ function fooFetchError(error: ErrorType): FooFetchErrorAction {
     return { type: FOO_FETCH_ERROR, error };
 }
 function fooFetchErrorReducer(state: FooState, action: FooFetchErrorAction): FooState {
-    return { ...state };
+    return { ...state, foos: resError(action.error) };
 }
 
 export const FOO_FETCH_RESULT = "FOO:FETCH_RESULT";
@@ -49,7 +49,7 @@ function fooFetchResult(items: string[]): FooFetchResultAction {
     return { type: FOO_FETCH_RESULT, items };
 }
 function fooFetchResultReducer(state: FooState, action: FooFetchResultAction): FooState {
-    return { ...state, items: action.items };
+    return { ...state, foos: resResult(action.items) };
 }
 
 //
