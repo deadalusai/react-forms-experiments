@@ -5,12 +5,16 @@ import * as FooStore from "store/foo";
 
 export function* fooFetch(): SagaIterator {
     yield delay(2000);
+    const error = {
+        errorId: "FOOS_FETCH_FAILURE",
+        errorParams: { value1: 1, value2: "failure" },
+    };
+    yield put(FooStore.actions.fooFetchError(error));
+    yield delay(2000);
     const results = [
         "Hello world",
         "Goodbye moon"
     ];
-    yield put(FooStore.actions.fooFetchError({ errorId: "FOOS_FETCH_FAILURE" }));
-    yield delay(2000);
     yield put(FooStore.actions.fooFetchResult(results));
 }
 

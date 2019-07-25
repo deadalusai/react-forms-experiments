@@ -4,7 +4,7 @@ import { compose } from "redux";
 
 import { RootState } from "store";
 import * as FooStore from "store/foo";
-import { ResAdapter } from "api";
+import { ResAdapter, ErrorType } from "api";
 
 export interface StateProps {
     foos: ResAdapter<string[]>,
@@ -24,32 +24,9 @@ export class TestTwo extends React.Component<TestTwoProps> {
 
     public render() {
         return this.props.foos
-            .loading("Loading...")
-            .error(error => {
-                return <>
-                    <h1>Error</h1>
-                    <p>{error.errorId}</p>
-                </>;
-            })
-            .result(foos => {
-                return <>
-                    <h1>Results</h1>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Foos</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {foos.map((foo, i) => (
-                                <tr key={i}>
-                                    <td>{foo}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </>;
-            })
+            .loading(<Loading />)
+            .error(error => <ErrorTable error={error} />)
+            .result(foos => <ResultTable foos={foos} />)
             .render();
     }
 }
@@ -66,3 +43,57 @@ const wrap = compose(
 );
 
 export default wrap(TestTwo);
+
+function Loading() {
+    return <span className="loading">Loading...</span>;
+}
+
+interface ErrorTableProps {
+    error: ErrorType;
+}
+function ErrorTable({ error }: ErrorTableProps) {
+    return <>
+        <h1>Error</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th colSpan={2}>
+                        {error.errorId}
+                    </th>
+                </tr>
+            </thead>
+            {error.errorParams &&
+                <tbody>
+                    {Object.keys(error.errorParams).map((key) => (
+                        <tr key={key}>
+                            <td>{key}</td>
+                            <td>{error.errorParams[key]}</td>
+                        </tr>
+                    ))}
+                </tbody>}
+        </table>
+    </>;
+}
+
+interface ResultTableProps {
+    foos: string[];
+}
+function ResultTable({ foos }: ResultTableProps) {
+    return <>
+        <h1>Results</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Foos</th>
+                </tr>
+            </thead>
+            <tbody>
+                {foos.map((foo, i) => (
+                    <tr key={i}>
+                        <td>{foo}</td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    </>;
+}
