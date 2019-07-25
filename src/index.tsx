@@ -3,11 +3,19 @@ import * as ReactDOM from "react-dom";
 import { Provider } from "react-redux";
 
 import { store } from "store";
-import FooList from "components/app";
+import TestOne from "components/test-one";
+import TestTwo from "components/test-two";
+
+function App() {
+    return <>
+        <div style={{ margin: "20px" }}><TestOne /></div>
+        <div style={{ margin: "20px" }}><TestTwo /></div>
+    </>;
+}
 
 const app = (
     <Provider store={store}>
-        <FooList />
+        <App />
     </Provider>
 );
 

@@ -9,6 +9,8 @@ export function* fooFetch(): SagaIterator {
         "Hello world",
         "Goodbye moon"
     ];
+    yield put(FooStore.actions.fooFetchError({ errorId: "FOOS_FETCH_FAILURE" }));
+    yield delay(2000);
     yield put(FooStore.actions.fooFetchResult(results));
 }
 

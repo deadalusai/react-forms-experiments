@@ -1,5 +1,5 @@
 import { ActionsFrom, assertNever } from "util";
-import { ErrorType, Res, resResult, resLoading, resError } from "api";
+import { ErrorType, Res, ResAdapter, resResult, resLoading, resError } from "api";
 
 //
 // State
@@ -11,6 +11,18 @@ export interface FooState {
 
 export const initialState: FooState = {
     foos: resResult([]),
+};
+
+//
+// Selectors
+//
+
+function getFoos(state: FooState) {
+    return new ResAdapter(state.foos);
+}
+
+export const selectors = {
+    getFoos
 };
 
 //

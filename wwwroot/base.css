@@ -1,14 +1,31 @@
+/* Body */
 body {
     padding: 20px;
-    font-family: 'Courier New', Courier, monospace;
 }
 
+/* Typography */
+body {
+    font-family: 'Courier New', Courier, monospace;
+}
+h1 { font-weight: 600; font-size: 200%; }
+h2 { font-weight: 600; font-size: 180%; }
+h3 { font-weight: 600; font-size: 160%; }
+h4 { font-weight: 600; font-size: 140%; }
+h5 { font-weight: 600; font-size: 120%; }
+h6 { font-weight: 600; font-size: 100%; }
+
+
+/* Tables */
 table {
     text-align: left;
-}
-table th {
-    font-weight: bold;
+    border: 1px solid black;
+    border-collapse: collapse;
 }
 table th, td {
     padding: 5px;
+    border: 1px solid black;
+}
+table th {
+    font-weight: bold;
+    border-bottom: 2px solid black;
 }

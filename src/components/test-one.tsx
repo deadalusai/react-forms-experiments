@@ -12,13 +12,11 @@ export interface StateProps {
 export interface ActionProps {
     fooFetch: typeof FooStore.actions.fooFetch,
 }
-export interface OwnProps {
+export interface OwnProps {}
 
-}
+export type TestOneProps = StateProps & ActionProps & OwnProps;
 
-export type AppProps = StateProps & ActionProps & OwnProps;
-
-export class App extends React.Component<AppProps> {
+export class TestOne extends React.Component<TestOneProps> {
 
     public componentWillMount() {
         this.props.fooFetch();
@@ -35,20 +33,23 @@ export class App extends React.Component<AppProps> {
                 <p>{foos.error.errorId}</p>
             </>;
         }
-        return <table>
-            <thead>
-                <tr>
-                    <th>Foos</th>
-                </tr>
-            </thead>
-            <tbody>
-                {foos.result.map((foo, i) => (
-                    <tr key={i}>
-                        <td>{foo}</td>
+        return <>
+            <h1>Results</h1>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Foos</th>
                     </tr>
-                ))}
-            </tbody>
-        </table>;
+                </thead>
+                <tbody>
+                    {foos.result.map((foo, i) => (
+                        <tr key={i}>
+                            <td>{foo}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </>;
     }
 }
 
@@ -63,4 +64,4 @@ const wrap = compose(
     )
 );
 
-export default wrap(App);
+export default wrap(TestOne);
