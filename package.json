@@ -1,0 +1,63 @@
+{
+    "name": "result_test",
+    "version": "1.0.0",
+    "description": "",
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/react": "16.8.23",
+        "@types/react-dom": "16.8.5",
+        "@types/react-redux": "7.1.1",
+        "@types/redux": "3.6.0",
+        "@types/redux-saga": "0.10.5",
+        "rimraf": "2.6.3",
+        "typescript": "3.5.3",
+        "vendor-copy": "2.0.0"
+    },
+    "dependencies": {
+        "react": "16.8.6",
+        "react-dom": "16.8.6",
+        "react-redux": "7.1.0",
+        "redux": "4.0.4",
+        "redux-saga": "1.0.5",
+        "requirejs": "2.3.6",
+        "tslib": "1.10.0"
+    },
+    "vendorCopy": [
+        {
+            "from": "node_modules/requirejs/require.js",
+            "to": "wwwroot/lib/requirejs/require.js"
+        },
+        {
+            "from": "node_modules/react/umd/react.development.js",
+            "to": "wwwroot/lib/react/umd/react.development.js"
+        },
+        {
+            "from": "node_modules/react-dom/umd/react-dom.development.js",
+            "to": "wwwroot/lib/react-dom/umd/react-dom.development.js"
+        },
+        {
+            "from": "node_modules/redux/dist/redux.min.js",
+            "to": "wwwroot/lib/redux/dist/redux.min.js"
+        },
+        {
+            "from": "node_modules/react-redux/dist/react-redux.min.js",
+            "to": "wwwroot/lib/react-redux/dist/react-redux.min.js"
+        },
+        {
+            "from": "node_modules/redux-saga/dist/redux-saga.umd.min.js",
+            "to": "wwwroot/lib/redux-saga/dist/redux-saga.umd.min.js"
+        },
+        {
+            "from": "node_modules/redux-saga/dist/redux-saga-effects.umd.min.js",
+            "to": "wwwroot/lib/redux-saga/dist/redux-saga-effects.umd.min.js"
+        }
+    ],
+    "scripts": {
+        "preinstall": "rimraf wwwroot/lib",
+        "postinstall": "vendor-copy",
+        "start-webserver": "basic-http-server wwwroot",
+        "start-tsc": "tsc --watch"
+    },
+    "basic-http-server": "../basic-http-server/target/release/basic-http-server.exe"
+}
