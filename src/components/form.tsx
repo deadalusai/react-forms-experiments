@@ -4,7 +4,7 @@ import { compose } from "redux";
 
 import { RootState } from "store";
 import * as FormStore from "store/forms";
-import { Form, Field } from "store/forms";
+import { Form, Field, FormValidators } from "store/forms";
 
 const FORM_NAME = "my-form";
 interface MyForm {
@@ -12,6 +12,11 @@ interface MyForm {
     field2: string;
     field3: number;
 }
+
+const formValidators: FormValidators<MyForm> = {
+    field1: value => (/hello/i.test(value)) ? { errorId: "ERROR.NOT_ALLOWED", errorParams: { value } } : null,
+    field3: value => (value == 2) ? { errorId: "ERROR.NOT_ALLOWED", errorParams: { value } } : null,
+};
 
 export interface StateProps {
     form: Form<MyForm> | undefined;
@@ -27,12 +32,12 @@ export type FormViewProps = StateProps & ActionProps & OwnProps;
 export class FormView extends React.Component<FormViewProps> {
 
     public componentWillMount() {
-        const init: MyForm = {
+        const data: MyForm = {
             field1: "hello",
             field2: "world",
             field3: 2,
         };
-        this.props.initForm(FORM_NAME, init);
+        this.props.initForm(FORM_NAME, data, formValidators);
     }
 
     public render() {
@@ -40,11 +45,16 @@ export class FormView extends React.Component<FormViewProps> {
         if (!form) {
             return null
         }
-        const update = (field: Field<any>) => this.props.updateForm(FORM_NAME, field);
+        const update = (field: Field<any>) => this.props.updateForm(form, field, formValidators);
         const data = {
-            field1: form.field1.value,
-            field2: form.field2.value,
-            field3: form.field3.value,
+            field1: form.fields.field1.value,
+            field2: form.fields.field2.value,
+            field3: form.fields.field3.value,
+        };
+        const meta = {
+            field1: form.fields.field1.meta,
+            field2: form.fields.field2.meta,
+            field3: form.fields.field3.meta,
         };
         const options = [
             { label: "Option one", value: 1 },
@@ -54,19 +64,22 @@ export class FormView extends React.Component<FormViewProps> {
         return (
             <section>
                 <div>
-                    <TextInput label="Field one" field={form.field1} onChange={update} />
+                    <TextInput label="Field one" field={form.fields.field1} onChange={update} />
                 </div>
                 <div>
-                    <TextInput label="Field two" field={form.field2} onChange={update} />
+                    <TextInput label="Field two" field={form.fields.field2} onChange={update} />
                 </div>
                 <div>
-                    <DropDownInput label="Field three" field={form.field3} onChange={update}>
+                    <DropDownInput label="Field three" field={form.fields.field3} onChange={update}>
                         <Option label="NO SELECTION" />
                         {options.map(o => <Option key={o.value} label={o.label} value={o.value} />)}
                     </DropDownInput>
                 </div>
                 <pre>
-                    {JSON.stringify(data, null, 4)}
+                    data: {JSON.stringify(data, null, 4)}
+                </pre>
+                <pre>
+                    meta: {JSON.stringify(meta, null, 4)}
                 </pre>
             </section>
         );
