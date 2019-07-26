@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import FactsView from "components/facts";
-import FormView from "components/form";
+import MyFormView from "components/myform";
 
 enum Page { facts, form }
 
@@ -25,7 +25,7 @@ export function App() {
         <section>
             {(
                 page == Page.facts ? <FactsView /> :
-                page == Page.form ? <FormView /> : null
+                page == Page.form ? <MyFormView /> : null
             )}
         </section>
     </>;

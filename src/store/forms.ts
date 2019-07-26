@@ -18,14 +18,14 @@ export interface FormMeta {
     dirty: boolean;
 }
 
-export type Field<TKey = any, TValue = any> = {
+export type Field<TValue = any, TKey = any> = {
     name: TKey;
     value: TValue;
     meta: FieldMeta;
 };
 
 export type FormFields<TForm> = {
-    [TKey in keyof TForm]: Field<TKey, TForm[TKey]>
+    [TKey in keyof TForm]: Field<TForm[TKey], TKey>
 };
 
 export type Form<TForm = any> = {
@@ -35,18 +35,18 @@ export type Form<TForm = any> = {
     meta: FormMeta;
 };
 
-export type FieldValidator<TValue> = (value: TValue) => ErrorType | null;
+export type FieldValidator<TValue = any> = (value: TValue) => ErrorType | null;
 
-export type FormValidators<TForm> = {
+export type FormValidators<TForm = any> = {
     [TKey in keyof TForm]?: FieldValidator<TForm[TKey]>;
 };
 
-export type FieldOf<TForm, TKey extends keyof TForm = any, TValue extends TForm[TKey] = any> = Field<TKey, TValue>;
+export type FieldOf<TForm, TKey extends keyof TForm = any, TValue extends TForm[TKey] = any> = Field<TValue, TKey>;
 
 export function applyValidators<TForm, TKey extends keyof TForm, TValue extends TForm[TKey]>(
     formValidators: FormValidators<TForm>,
-    field: Field<TKey, TValue>
-): Field<TKey, TValue> {
+    field: Field<TValue, TKey>
+): Field<TValue, TKey> {
     const validator = formValidators[field.name];
     if (validator) {
         const error = validator(field.value);
@@ -85,6 +85,46 @@ export function createForm<TForm>(name: string, initial: TForm, validators?: For
 }
 
 //
+// Validators
+//
+
+export function combineValidators<TValue>(...validators: FieldValidator<TValue>[]): FieldValidator<TValue> {
+    return value => validators.reduce((error, validator) => error || validator(value), null as ErrorType | null);
+}
+
+function required(error = "ERROR.REQUIRED"): FieldValidator {
+    return value => value === null || value === undefined || value === "" ? { error, params: { value } } : null;
+}
+function number(error = "ERROR.NOT_A_NUMBER"): FieldValidator {
+    return value => isNaN(value) ? { error, params: { value } } : null;
+}
+function lessThanOrEqual(n: number, error = "ERROR.NOT_LESS_THAN_OR_EQUAL"): FieldValidator {
+    return value => typeof value === "number" && value > n ? { error, params: { n, value } } : null;
+}
+function lessThan(n: number, error = "ERROR.NOT_LESS_THAN"): FieldValidator {
+    return value => typeof value === "number" && value >= n ? { error, params: { n, value } } : null;
+}
+function greaterThanOrEqual(n: number, error = "ERROR.NOT_LESS_THAN_OR_EQUAL"): FieldValidator {
+    return value => typeof value === "number" && value < n ? { error, params: { n, value } } : null;
+}
+function greaterThan(n: number, error = "ERROR.NOT_LESS_THAN"): FieldValidator {
+    return value => typeof value === "number" && value <= n ? { error, params: { n, value } } : null;
+}
+function pattern(p: RegExp, error = "ERROR.PATTERN_NOT_MATCHED"): FieldValidator {
+    return value => (typeof value === "string") && !p.test(value) ? { error, params: { value } } : null;
+}
+
+export const validators = {
+    required,
+    number,
+    lessThanOrEqual,
+    lessThan,
+    greaterThanOrEqual,
+    greaterThan,
+    pattern,
+};
+
+//
 // State
 //
 
@@ -117,49 +157,44 @@ export const selectors = {
 export const FORMS_INIT_FORM = "FORMS:INIT_FORM";
 export interface InitFormAction {
     type: typeof FORMS_INIT_FORM;
-    name: string;
-    initialValues: any;
-    formValidators?: FormValidators<any>;
+    form: Form;
 }
 function initForm<TForm>(name: string, initialValues: TForm, formValidators?: FormValidators<TForm>): InitFormAction {
-    return { type: FORMS_INIT_FORM, name, initialValues, formValidators };
+    const form = createForm<any>(name, initialValues, formValidators);
+    return { type: FORMS_INIT_FORM, form };
 }
 function initFormReducer(state: FormsState, action: InitFormAction): FormsState {
     return {
         ...state,
         forms: {
             ...state.forms,
-            [action.name]: createForm(action.name, action.initialValues, action.formValidators),
+            [action.form.name]: action.form,
         }
     };
 }
 
 export const FORMS_UPDATE_FORM = "FORMS:SET_FORM_VALUE";
-export interface SetFormValueAction {
+export interface UpdateFormAction {
     type: typeof FORMS_UPDATE_FORM;
-    form: Form;
+    name: string;
     field: Field;
 }
-function updateForm<TForm, TKey extends keyof TForm, TValue extends TForm[TKey]>(
-    form: Form<TForm>,
-    field: Field<TKey, TValue>,
-    formValidators?: FormValidators<TForm>
-): SetFormValueAction {
+function updateForm(name: string, field: Field, formValidators?: FormValidators): UpdateFormAction {
     return {
         type: FORMS_UPDATE_FORM,
-        form: form as any,
+        name,
         field: formValidators ? applyValidators(formValidators, field) : field
     };
 }
-function updateFormReducer(state: FormsState, action: SetFormValueAction): FormsState {
-    const form = state.forms[action.form.name];
+function updateFormReducer(state: FormsState, action: UpdateFormAction): FormsState {
+    const form = state.forms[action.name];
     if (!form) {
         return state;
     }
     const field = action.field;
     const meta: FieldMeta = {
         valid: field.meta.valid,
-        touched: field.meta.touched || field.value != form.initial[field.name],
+        touched: field.meta.touched,
         dirty: field.value != form.initial[field.name],
         error: field.meta.error
     };
