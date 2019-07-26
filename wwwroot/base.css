@@ -14,6 +14,15 @@ h4 { font-weight: 600; font-size: 140%; margin-bottom: 14px; }
 h5 { font-weight: 600; font-size: 120%; margin-bottom: 12px; }
 h6 { font-weight: 600; font-size: 100%; margin-bottom: 10px; }
 
+/* Forms */
+label.form-field {
+    margin-bottom: 20px;
+    display: block;
+}
+label.form-field div {
+    font-weight: bold;
+}
+
 /* Tables */
 table {
     text-align: left;

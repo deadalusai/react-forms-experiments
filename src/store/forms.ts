@@ -13,22 +13,19 @@ export function metaError(errorId: string, errorParams?: string): FieldMeta {
     return { valid: false, errorId, errorParams };
 }
 
-export interface FieldData {
+export type Field<TValue> = {
     name: string;
-    value: any;
+    value: TValue;
     meta: FieldMeta;
-}
+};
 
-export interface FormData {
-    name: string;
-    fields: {
-        [name: string]: FieldData;
-    }
-}
+export type Form<TForm> = {
+    [K in keyof TForm]: Field<TForm[K]>
+};
 
-export interface FormValues {
-    [name: string]: any;
-}
+export type FormValues<TForm> = {
+    [K in keyof TForm]: TForm[K];
+};
 
 //
 // State
@@ -36,12 +33,31 @@ export interface FormValues {
 
 export interface FormsState {
     forms: {
-        [name: string]: FormData;
+        [name: string]: Form<any> | undefined;
     };
 }
 
 export const initialState: FormsState = {
     forms: {},
+};
+
+//
+// Selectors
+//
+
+function getForm<TForm>(state: FormsState, name: string): Form<TForm> | undefined {
+    const form = state.forms[name];
+    return form as any;
+}
+
+function getFormValues<TForm>(state: FormsState, name: string): Form<TForm> | undefined {
+    const form = state.forms[name];
+    return form && form as any;
+}
+
+export const selectors = {
+    getForm,
+    getFormValues,
 };
 
 //
@@ -52,13 +68,13 @@ export const FORMS_INIT_FORM = "FORMS:INIT_FORM";
 export interface InitFormAction {
     type: typeof FORMS_INIT_FORM;
     name: string;
-    initialValues: FormValues | null;
+    initialValues: FormValues<any> | null;
 }
-function initForm(name: string, initialValues: FormValues | null = null): InitFormAction {
+function initForm<TForm>(name: string, initialValues: FormValues<TForm> | null = null): InitFormAction {
     return { type: FORMS_INIT_FORM, name, initialValues };
 }
 function initFormReducer(state: FormsState, action: InitFormAction): FormsState {
-    const fields: { [name: string]: FieldData } = {};
+    const fields: { [name: string]: Field<any> } = {};
     if (action.initialValues) {
         for (const name in action.initialValues) {
             fields[name] = {
@@ -72,10 +88,7 @@ function initFormReducer(state: FormsState, action: InitFormAction): FormsState 
         ...state,
         forms: {
             ...state.forms,
-            [action.name]: {
-                name: action.name,
-                fields,
-            }
+            [action.name]: fields,
         }
     };
 }
@@ -93,7 +106,10 @@ function setFormValue(form: string, field: string, value: any, meta?: FieldMeta)
 }
 function setFormValueReducer(state: FormsState, action: SetFormValueAction): FormsState {
     const form = state.forms[action.form];
-    const field = form.fields[action.field];
+    if (!form) {
+        return state;
+    }
+    const field = form[action.field];
     const meta = action.meta || field.meta || metaValid();
     return {
         ...state,
@@ -101,17 +117,18 @@ function setFormValueReducer(state: FormsState, action: SetFormValueAction): For
             ...state.forms,
             [action.form]: {
                 ...form,
-                fields: {
-                    ...form.fields,
-                    [action.field]: {
-                        name: action.field,
-                        value: action.value,
-                        meta
-                    }
+                [action.field]: {
+                    name: action.field,
+                    value: action.value,
+                    meta
                 }
             }
         }
     };
+}
+
+function updateForm<TValue>(form: string, field: Field<TValue>) {
+    return setFormValue(form, field.name, field.value, field.meta);
 }
 
 //
@@ -121,6 +138,7 @@ function setFormValueReducer(state: FormsState, action: SetFormValueAction): For
 export const actions = {
     initForm,
     setFormValue,
+    updateForm,
 };
 
 export function reducer(state: FormsState | undefined, action: ActionsFrom<typeof actions>) {
