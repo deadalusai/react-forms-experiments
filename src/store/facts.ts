@@ -1,5 +1,5 @@
 import { ActionsFrom, assertNever } from "util";
-import { ErrorType, Res, resResult, resLoading, resError } from "api";
+import { Res, resResult, resLoading } from "api";
 import { ISportsperson } from "api/query";
 
 //
@@ -41,18 +41,6 @@ function sportspeopleFetchFetchReducer(state: FactsState, _action: SportspeopleF
     return { ...state, sportspeople: resLoading() };
 }
 
-export const FACTS_SPORTSPEOPLE_FETCH_ERROR = "FOO:FETCH_ERROR";
-export interface SportspeopleFetchErrorAction {
-    type: typeof FACTS_SPORTSPEOPLE_FETCH_ERROR,
-    error: ErrorType,
-}
-function sportspeopleFetchError(error: ErrorType): SportspeopleFetchErrorAction {
-    return { type: FACTS_SPORTSPEOPLE_FETCH_ERROR, error };
-}
-function sportspeopleFetchErrorReducer(state: FactsState, action: SportspeopleFetchErrorAction): FactsState {
-    return { ...state, sportspeople: resError(action.error) };
-}
-
 export const FACTS_SPORTSPEOPLE_FETCH_RESULT = "FOO:FETCH_RESULT";
 export interface SportspeopleFetchResultAction {
     type: typeof FACTS_SPORTSPEOPLE_FETCH_RESULT,
@@ -72,7 +60,6 @@ function sportspeopleFetchResultReducer(state: FactsState, action: SportspeopleF
 export const actions = {
     sportspeopleFetch,
     sportspeopleFetchResult,
-    sportspeopleFetchError,
 };
 
 export function reducer(state: FactsState | undefined, action: ActionsFrom<typeof actions>) {
@@ -82,8 +69,6 @@ export function reducer(state: FactsState | undefined, action: ActionsFrom<typeo
     switch (action.type) {
         case FACTS_SPORTSPEOPLE_FETCH:
             return sportspeopleFetchFetchReducer(state, action);
-        case FACTS_SPORTSPEOPLE_FETCH_ERROR:
-            return sportspeopleFetchErrorReducer(state, action);
         case FACTS_SPORTSPEOPLE_FETCH_RESULT:
             return sportspeopleFetchResultReducer(state, action);
         default:

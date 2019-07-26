@@ -1,19 +1,10 @@
 import { SagaIterator } from "redux-saga";
 import { takeLatest, delay, put } from "redux-saga/effects";
 
-import * as FooStore from "store/facts";
+import * as FactsStore from "store/facts";
 import { ISportsperson } from "api/query";
 
 export function* fooFetch(): SagaIterator {
-    yield delay(2000);
-    const error = {
-        errorId: "SPORTSPEOPLE_FETCH_FAILURE",
-        errorParams: {
-            "error code": 10021,
-            "error message": "failure to communicate"
-        },
-    };
-    yield put(FooStore.actions.sportspeopleFetchError(error));
     yield delay(2000);
     const results: ISportsperson[] = [
         {
@@ -45,9 +36,9 @@ export function* fooFetch(): SagaIterator {
             }
         },
     ];
-    yield put(FooStore.actions.sportspeopleFetchResult(results));
+    yield put(FactsStore.actions.sportspeopleFetchResult(results));
 }
 
 export function* saga(): SagaIterator {
-    yield takeLatest(FooStore.FACTS_SPORTSPEOPLE_FETCH, fooFetch);
+    yield takeLatest(FactsStore.FACTS_SPORTSPEOPLE_FETCH, fooFetch);
 }
