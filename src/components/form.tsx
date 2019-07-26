@@ -14,8 +14,8 @@ interface MyForm {
 }
 
 const formValidators: FormValidators<MyForm> = {
-    field1: value => (/hello/i.test(value)) ? { errorId: "ERROR.NOT_ALLOWED", errorParams: { value } } : null,
-    field3: value => (value == 2) ? { errorId: "ERROR.NOT_ALLOWED", errorParams: { value } } : null,
+    field1: value => (/hello/i.test(value)) ? { error: "ERROR.NOT_ALLOWED", params: { value } } : null,
+    field3: value => (value == 2) ? { error: "ERROR.NOT_ALLOWED", params: { value } } : null,
 };
 
 export interface StateProps {
@@ -46,12 +46,14 @@ export class FormView extends React.Component<FormViewProps> {
             return null
         }
         const update = (field: Field<any>) => this.props.updateForm(form, field, formValidators);
+        const initial = form.initial;
         const data = {
             field1: form.fields.field1.value,
             field2: form.fields.field2.value,
             field3: form.fields.field3.value,
         };
         const meta = {
+            form: form.meta,
             field1: form.fields.field1.meta,
             field2: form.fields.field2.meta,
             field3: form.fields.field3.meta,
@@ -75,6 +77,9 @@ export class FormView extends React.Component<FormViewProps> {
                         {options.map(o => <Option key={o.value} label={o.label} value={o.value} />)}
                     </DropDownInput>
                 </div>
+                <pre>
+                    initial: {JSON.stringify(initial, null, 4)}
+                </pre>
                 <pre>
                     data: {JSON.stringify(data, null, 4)}
                 </pre>
@@ -112,7 +117,7 @@ function TextInput({ label, field, onChange }: TextInputProps) {
                 {label || field.name}
             </div>
             <input type="text" value={field.value} onChange={e => onChange({ ...field, value: e.target.value })} />
-            {field.meta.errorId && <span className="form-field-error">{field.meta.errorId}</span>}
+            {field.meta.error && <span className="form-field-error">{field.meta.error.error}</span>}
         </label>
     );
 }
@@ -144,7 +149,7 @@ function DropDownInput({ label, field, onChange, children }: DropDownInputProps)
             <select value={field.value} onChange={e => onChange({ ...field, value: toValue(e.target.value) })}>
                 {children}
             </select>
-            {field.meta.errorId && <span className="form-field-error">{field.meta.errorId}</span>}
+            {field.meta.error && <span className="form-field-error">{field.meta.error.error}</span>}
         </label>
     )
 }

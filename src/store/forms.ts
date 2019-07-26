@@ -1,16 +1,21 @@
 import { ActionsFrom, assertNever } from "util";
 
+export interface ErrorType {
+    error: string;
+    params?: any;
+};
+
 export interface FieldMeta {
     valid: boolean;
-    errorId?: string;
-    errorParams?: any;
+    touched: boolean;
+    dirty: boolean;
+    error: ErrorType | null;
 }
 
-export function metaValid(): FieldMeta {
-    return { valid: true };
-}
-export function metaInvalid(errorId: string, errorParams?: string): FieldMeta {
-    return { valid: false, errorId, errorParams };
+export interface FormMeta {
+    valid: boolean;
+    touched: boolean;
+    dirty: boolean;
 }
 
 export type Field<TKey = any, TValue = any> = {
@@ -25,10 +30,12 @@ export type FormFields<TForm> = {
 
 export type Form<TForm = any> = {
     name: string;
+    initial: TForm;
     fields: FormFields<TForm>;
+    meta: FormMeta;
 };
 
-export type FieldValidator<TValue> = (value: TValue) => { errorId: string, errorParams?: any } | null;
+export type FieldValidator<TValue> = (value: TValue) => ErrorType | null;
 
 export type FormValidators<TForm> = {
     [TKey in keyof TForm]?: FieldValidator<TForm[TKey]>;
@@ -36,27 +43,45 @@ export type FormValidators<TForm> = {
 
 export type FieldOf<TForm, TKey extends keyof TForm = any, TValue extends TForm[TKey] = any> = Field<TKey, TValue>;
 
-export function applyValidators<TForm, TKey extends keyof TForm, TValue extends TForm[TKey]>(formValidators: FormValidators<TForm>, field: Field<TKey, TValue>) {
+export function applyValidators<TForm, TKey extends keyof TForm, TValue extends TForm[TKey]>(
+    formValidators: FormValidators<TForm>,
+    field: Field<TKey, TValue>
+): Field<TKey, TValue> {
     const validator = formValidators[field.name];
     if (validator) {
         const error = validator(field.value);
         if (error) {
-            return { ...field, meta: metaInvalid(error.errorId, error.errorParams) };
+            return {
+                ...field,
+                meta: { ...field.meta, valid: false, error },
+            };
         }
     }
-    return { ...field, meta: metaValid() };
+    return {
+        ...field,
+        meta: { ...field.meta, valid: true, error: null }
+    };
 }
 
-export function createForm<TForm>(name: string, data: TForm, validators?: FormValidators<TForm>): Form<TForm> {
+export function createForm<TForm>(name: string, initial: TForm, validators?: FormValidators<TForm>): Form<TForm> {
     const fields: FormFields<TForm> = {} as any;
-    for (const name in data) {
-        const value = data[name];
+    let valid = true;
+    for (const name in initial) {
+        const value = initial[name];
         const validator = validators && validators[name];
-        const error = validator && validator(value);
-        const meta = error ? metaInvalid(error.errorId, error.errorParams) : metaValid();
+        const error = validator && validator(value) || null;
+        const meta = {
+            valid: error === null,
+            touched: false,
+            dirty: false,
+            error
+        };
         fields[name] = { name, value, meta };
+        if (error) {
+            valid = false;
+        }
     }
-    return { name, fields };
+    return { name, initial, fields, meta: { valid, touched: false, dirty: false } };
 }
 
 //
@@ -131,16 +156,38 @@ function updateFormReducer(state: FormsState, action: SetFormValueAction): Forms
     if (!form) {
         return state;
     }
-    const field = form.fields[action.field.name];
+    const field = action.field;
+    const meta: FieldMeta = {
+        valid: field.meta.valid,
+        touched: field.meta.touched || field.value != form.initial[field.name],
+        dirty: field.value != form.initial[field.name],
+        error: field.meta.error
+    };
+    // Calculate form meta
+    const fieldNames = Object.keys(form.fields);
+    const fieldMeta = (fieldName: any) => {
+        return fieldName === field.name ? meta : form.fields[fieldName].meta;
+    }
+    const formValid = fieldNames.reduce((valid, name) => valid && fieldMeta(name).valid, true);
+    const formTouched = fieldNames.reduce((touched, name) => touched || fieldMeta(name).touched, false);
+    const formDirty = fieldNames.reduce((dirty, name) => dirty || fieldMeta(name).dirty, false);
     return {
         ...state,
         forms: {
             ...state.forms,
             [form.name]: {
                 ...form,
+                meta: {
+                    valid: formValid,
+                    touched: formTouched,
+                    dirty: formDirty,
+                },
                 fields: {
                     ...form.fields,
-                    [field.name]: action.field,
+                    [field.name]: {
+                        ...field,
+                        meta,
+                    },
                 }
             }
         }
