@@ -194,6 +194,46 @@ function updateFormReducer(state: FormsState, action: SetFormValueAction): Forms
     };
 }
 
+export const FORMS_TOUCH_FORM = "FORMS:TOUCH_FORM";
+export interface TouchFormAction {
+    type: typeof FORMS_TOUCH_FORM;
+    name: string;
+}
+function touchForm(name: string): TouchFormAction {
+    return { type: FORMS_TOUCH_FORM, name };
+}
+function touchFormReducer(state: FormsState, action: TouchFormAction): FormsState {
+    const form = state.forms[action.name];
+    if (!form) {
+        return state;
+    }
+    const fields = { ...form.fields };
+    for (const name in fields) {
+        fields[name] = {
+            ...fields[name],
+            meta: {
+                ...fields[name].meta,
+                touched: true,
+            }
+        };
+    }
+    const meta = {
+        ...form.meta,
+        touched: true
+    };
+    return {
+        ...state,
+        forms: {
+            ...state.forms,
+            [form.name]: {
+                ...form,
+                fields,
+                meta
+            },
+        }
+    };
+}
+
 //
 // Reducer
 //
@@ -201,6 +241,7 @@ function updateFormReducer(state: FormsState, action: SetFormValueAction): Forms
 export const actions = {
     initForm,
     updateForm,
+    touchForm,
 };
 
 export function reducer(state: FormsState | undefined, action: ActionsFrom<typeof actions>) {
@@ -212,6 +253,8 @@ export function reducer(state: FormsState | undefined, action: ActionsFrom<typeo
             return initFormReducer(state, action);
         case FORMS_UPDATE_FORM:
             return updateFormReducer(state, action);
+        case FORMS_TOUCH_FORM:
+            return touchFormReducer(state, action);
         default:
             assertNever(action);
     }
