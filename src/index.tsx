@@ -3,11 +3,7 @@ import * as ReactDOM from "react-dom";
 import { Provider } from "react-redux";
 
 import { store } from "store";
-import FactsView from "components/facts";
-
-function App() {
-    return <FactsView />;
-}
+import { App } from "components/app";
 
 const app = (
     <Provider store={store}>

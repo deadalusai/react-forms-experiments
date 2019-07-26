@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 import { compose } from "redux";
 
 import { RootState } from "store";
-import * as FooStore from "store/facts";
+import * as FactsStore from "store/facts";
 import { Res } from "api";
 import { ISportsperson } from "api/query";
 
@@ -11,7 +11,7 @@ export interface StateProps {
     sportspeople: Res<ISportsperson[]>,
 }
 export interface ActionProps {
-    sportspeopleFetch: typeof FooStore.actions.sportspeopleFetch,
+    sportspeopleFetch: typeof FactsStore.actions.sportspeopleFetch,
 }
 export interface OwnProps {}
 
@@ -37,7 +37,7 @@ const wrap = compose(
             sportspeople: state.facts.sportspeople,
         }),
         { 
-            sportspeopleFetch: FooStore.actions.sportspeopleFetch
+            sportspeopleFetch: FactsStore.actions.sportspeopleFetch
         }
     )
 );

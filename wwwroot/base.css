@@ -29,3 +29,17 @@ table th {
     font-weight: bold;
     background: gainsboro;
 }
+
+/* Navigation */
+ul.action-menu {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    margin-bottom: 10px;
+}
+ul.action-menu li {
+    display: inline-block;
+}
+ul.action-menu li button {
+    width: 60px;
+}
