@@ -4,8 +4,8 @@ import { compose } from "redux";
 
 import { RootState } from "store";
 import * as FormStore from "store/forms";
-import { Form, Field, FormValidators, combineValidators, validators } from "store/forms";
-import { TextInput, SelectInput, Option } from "./forms";
+import { Form, Field, FormValidators, combineValidators, validators } from "forms";
+import { TextInput, SelectInput, Option } from "components/forms";
 
 const FORM_NAME = "my-form";
 interface MyForm {
@@ -17,7 +17,7 @@ interface MyForm {
 const formValidators: FormValidators<MyForm> = {
     field1: combineValidators(
         validators.required(),
-        validators.pattern(/hello/i, "ERROR.MUST_BE_HELLO"),
+        validators.pattern(/hello/i, "ERROR.MUST_CONTAIN_HELLO"),
     ),
     field2: combineValidators(
         validators.required(),
@@ -25,7 +25,7 @@ const formValidators: FormValidators<MyForm> = {
     field3: combineValidators(
         validators.required(),
         validators.greaterThan(1),
-        value => (value == 3) ? { error: "ERROR.NOT_ALLOWED", params: { value } } : null,
+        value => (value == 3) ? { error: "ERROR.THREE_NOT_ALLOWED", params: { value } } : null,
     ),
 };
 

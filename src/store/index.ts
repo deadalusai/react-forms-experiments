@@ -21,13 +21,13 @@ const rootReducer = combineReducers<RootState>({
 const sagaMiddleware = createSagaMiddleware();
 
 const composeEnhancers =
-  typeof window === 'object' &&
-  "__REDUX_DEVTOOLS_EXTENSION_COMPOSE__" in window
-    ? (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__({ /* name, actionsBlacklist, actionsCreators, serialize... */  })
-    : compose;
+    typeof window === 'object' &&
+        "__REDUX_DEVTOOLS_EXTENSION_COMPOSE__" in window
+            ? (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__({ /* name, actionsBlacklist, actionsCreators, serialize... */  })
+            : compose;
 
 const enhancer = composeEnhancers(
-  applyMiddleware(sagaMiddleware),
+    applyMiddleware(sagaMiddleware),
 );
 
 export const store = createStore(

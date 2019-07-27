@@ -1,16 +1,12 @@
 import * as React from "react";
 
-import { ErrorType, Field } from "store/forms";
+import { ErrorType, Field, touchField } from "forms";
 
 export interface ErrorMessageProps {
     error: ErrorType;
 }
 export function ErrorMessage({ error }: ErrorMessageProps) {
     return <span className="form-field-error">{error.error}</span>
-}
-
-function updateField(field: Field, value: any): Field {
-    return { ...field, value, meta: { ...field.meta, touched: true } };
 }
 
 export interface TextInputProps {
@@ -27,9 +23,9 @@ export function TextInput({ label, field, fieldChange }: TextInputProps) {
             <input
                 type="text"
                 value={field.value === null ? "" : field.value}
-                onChange={e => fieldChange(updateField(field, e.target.value))} />
+                onChange={e => fieldChange(touchField(field, e.target.value))} />
             {field.value &&
-                <button onClick={() => fieldChange(updateField(field, null))}>Clear</button>}
+                <button onClick={() => fieldChange(touchField(field, null))}>Clear</button>}
             {field.meta.touched && field.meta.error &&
                 <ErrorMessage error={field.meta.error} />}
         </label>
@@ -75,11 +71,11 @@ export function SelectInput({ label, field, fieldChange, children }: SelectInput
             </div>
             <select
                 value={stringValue(field.value)}
-                onChange={e => fieldChange(updateField(field, mapToTypedValue(e.target.value)))}>
+                onChange={e => fieldChange(touchField(field, mapToTypedValue(e.target.value)))}>
                 {children}
             </select>
             {field.value &&
-                <button onClick={() => fieldChange(updateField(field, null))}>Clear</button>}
+                <button onClick={() => fieldChange(touchField(field, null))}>Clear</button>}
             {field.meta.touched && field.meta.error &&
                 <ErrorMessage error={field.meta.error} />}
         </label>
