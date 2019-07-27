@@ -17,7 +17,7 @@ interface MyForm {
 const formValidators: FormValidators<MyForm> = {
     field1: combineValidators(
         validators.required(),
-        validators.pattern(/hello/i, "ERROR.NOT_ALLOWED"),
+        validators.pattern(/hello/i, "ERROR.MUST_BE_HELLO"),
     ),
     field2: combineValidators(
         validators.required(),
@@ -57,7 +57,7 @@ export class MyFormView extends React.Component<MyFormViewProps> {
         if (!form) {
             return null
         }
-        const onFieldChange = (field: Field<any>) => this.props.updateForm(form.name, field, formValidators);
+        const onFieldChange = (field: Field) => this.props.updateForm(form.name, field, formValidators);
         const initial = form.initial;
         const data = {
             field1: form.fields.field1.value,
@@ -86,7 +86,7 @@ export class MyFormView extends React.Component<MyFormViewProps> {
                 <div>
                     <SelectInput label="Field three" field={form.fields.field3} fieldChange={onFieldChange}>
                         <Option label="NO SELECTION" value={null} />
-                        {options.map(o => <Option key={o.value} {...o} />)}
+                        {options.map((o, i) => <Option key={i} {...o} />)}
                     </SelectInput>
                 </div>
                 <div>

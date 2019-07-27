@@ -28,15 +28,32 @@ export function TextInput({ label, field, fieldChange }: TextInputProps) {
                 type="text"
                 value={field.value === null ? "" : field.value}
                 onChange={e => fieldChange(updateField(field, e.target.value))} />
-            {field.meta.touched && field.meta.error && <ErrorMessage error={field.meta.error} />}
+            {field.value &&
+                <button onClick={() => fieldChange(updateField(field, null))}>Clear</button>}
+            {field.meta.touched && field.meta.error &&
+                <ErrorMessage error={field.meta.error} />}
         </label>
     );
 }
 
+// We need to smuggle the option value through the string prop on the DOM.
+// Complex types can provide an id property.
+export type SelectOptionValue = string | number | { id: string } | null;
+
+function stringValue(value: SelectOptionValue): string {
+    if (value === null) {
+        return "__NULL__";
+    }
+    if (typeof value === "object") {
+        return value.id;
+    }
+    return value.toString();
+}
+
 export interface SelectInputProps {
     label?: React.ReactNode;
-    field: Field<string | number | null>;
-    fieldChange: (value: Field<string | number | null>) => void;
+    field: Field<SelectOptionValue>;
+    fieldChange: (value: Field<SelectOptionValue>) => void;
     children: (React.ReactElement<OptionProps> | React.ReactElement<OptionProps>[])[];
 }
 export function SelectInput({ label, field, fieldChange, children }: SelectInputProps) {
@@ -44,8 +61,7 @@ export function SelectInput({ label, field, fieldChange, children }: SelectInput
         for (const child of children) {
             const options = (child instanceof Array) ? child : [child];
             for (const option of options) {
-                const optionValue = option.props.value === null ? "__NULL__" : option.props.value.toString();
-                if (optionValue === selectedValue) {
+                if (selectedValue === stringValue(option.props.value)) {
                     return option.props.value;
                 }
             }
@@ -58,19 +74,22 @@ export function SelectInput({ label, field, fieldChange, children }: SelectInput
                 {label || field.name}
             </div>
             <select
-                value={field.value === null ? "__NULL__" : field.value.toString()}
+                value={stringValue(field.value)}
                 onChange={e => fieldChange(updateField(field, mapToTypedValue(e.target.value)))}>
                 {children}
             </select>
-            {field.meta.touched && field.meta.error && <ErrorMessage error={field.meta.error} />}
+            {field.value &&
+                <button onClick={() => fieldChange(updateField(field, null))}>Clear</button>}
+            {field.meta.touched && field.meta.error &&
+                <ErrorMessage error={field.meta.error} />}
         </label>
     )
 }
 
 export interface OptionProps {
     label: React.ReactNode;
-    value: string | number | null;
+    value: SelectOptionValue;
 }
 export function Option({ label, value }: OptionProps) {
-    return <option value={value === null ? "__NULL__" : value.toString()}>{label}</option>;
+    return <option value={stringValue(value)}>{label}</option>;
 }
