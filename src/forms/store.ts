@@ -1,4 +1,4 @@
-import { ActionsFrom, assertNever } from "util";
+import { ActionsFrom } from "util";
 import { Form } from "forms";
 
 //
@@ -12,37 +12,10 @@ export interface FormsState {
 export const initialState: FormsState = {};
 
 //
-// Selectors
-//
-
-function getForm<TForm>(state: FormsState, name: string): Form<TForm> | undefined {
-    return state[name] as any;
-}
-
-export const selectors = {
-    getForm,
-};
-
-//
 // Actions
 //
 
-export const FORMS_INIT_FORM = "FORMS:INIT_FORM";
-export interface InitFormAction {
-    type: typeof FORMS_INIT_FORM;
-    form: Form;
-}
-function initForm(form: Form): InitFormAction {
-    return { type: FORMS_INIT_FORM, form };
-}
-function initFormReducer(state: FormsState, action: InitFormAction): FormsState {
-    return {
-        ...state,
-        [action.form.name]: action.form,
-    };
-}
-
-export const FORMS_UPDATE_FORM = "FORMS:UPDATE_FORM";
+const FORMS_UPDATE_FORM = "FORMS:UPDATE_FORM";
 export interface UpdateFormAction {
     type: typeof FORMS_UPDATE_FORM;
     form: Form;
@@ -51,14 +24,9 @@ function updateForm(form: Form): UpdateFormAction {
     return { type: FORMS_UPDATE_FORM, form };
 }
 function updateFormReducer(state: FormsState, action: UpdateFormAction): FormsState {
-    let form = state[action.form.name];
-    if (!form) {
-        // Form not initialised?
-        return state;
-    }
     return {
         ...state,
-        [form.name]: action.form,
+        [action.form.name]: action.form,
     };
 }
 
@@ -67,7 +35,6 @@ function updateFormReducer(state: FormsState, action: UpdateFormAction): FormsSt
 //
 
 export const actions = {
-    initForm,
     updateForm,
 };
 
@@ -76,12 +43,11 @@ export function reducer(state: FormsState | undefined, action: ActionsFrom<typeo
         return initialState;
     }
     switch (action.type) {
-        case FORMS_INIT_FORM:
-            return initFormReducer(state, action);
         case FORMS_UPDATE_FORM:
             return updateFormReducer(state, action);
-        default:
-            assertNever(action);
+        // NOTE: this check doesn't work if there's only one action in the union type.
+        // default:
+        //     assertNever(action);
     }
     return state;
 }

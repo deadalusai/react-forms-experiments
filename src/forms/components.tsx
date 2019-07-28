@@ -22,6 +22,11 @@ export interface FormOptions {
     validator?: FormValidator;
 }
 
+/**
+ * Higher-order component which provides a redux-backed FormComponentProps implementation
+ * 
+ * @param options Configuration options for the form. 
+ */
 export function withForm<TOwnProps = {}, TForm = any>(options: FormOptions) {
     return (WrappedComponent: React.ComponentClass<TOwnProps & FormComponentProps<TForm>>) => {
         // High-order component options
@@ -38,10 +43,10 @@ export function withForm<TOwnProps = {}, TForm = any>(options: FormOptions) {
                 form = rootState["forms"][formName] || null;
                 return { form };
             },
-            (dispatch) => {
+            (dispatch) => { 
                 formInit = (initial) => {
                     form = createForm<TForm>(formName, initial, formValidator);
-                    dispatch(FormsStore.actions.initForm(form));
+                    dispatch(FormsStore.actions.updateForm(form));
                 };
                 formTouch = () => {
                     if (!form) {
