@@ -2,14 +2,17 @@
 // State
 //
 
+export interface GlobalErrorInfo {
+    errorId: string;
+    errorParams?: any;
+}
+
 export interface GlobalState {
-    errorId: string | null;
-    errorParams: any | null;
+    error: GlobalErrorInfo | null;
 }
 
 export const initialState: GlobalState = {
-    errorId: null,
-    errorParams: null,
+    error: null,
 };
 
 //
@@ -28,8 +31,10 @@ function setError(errorId: string, errorParams: any | null = null): SetErrorActi
 function setErrorReducer(state: GlobalState, action: SetErrorAction): GlobalState {
     return {
         ...state,
-        errorId: action.errorId,
-        errorParams: action.errorParams,
+        error: {
+            errorId: action.errorId,
+            errorParams: action.errorParams,
+        }
     };
 }
 

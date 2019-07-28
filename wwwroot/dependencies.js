@@ -8,8 +8,10 @@ var require = {
         "react-dom": "react-dom/umd/react-dom.development",
         "react-redux": "react-redux/dist/react-redux.min",
         "redux": "redux/dist/redux.min",
+        "redux-form": "redux-form/dist/redux-form",
         "redux-saga": "redux-saga/dist/redux-saga.umd.min",
         "redux-saga/effects": "redux-saga/dist/redux-saga-effects.umd.min",
+        "immutable": "immutable/dist/immutable.min",
         // Typescript support library
         "tslib": "tslib/tslib"
     }

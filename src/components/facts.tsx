@@ -4,11 +4,13 @@ import { compose } from "redux";
 
 import { RootState } from "store";
 import * as FactsStore from "store/facts";
+import { GlobalErrorInfo } from "store/global";
 import { Res } from "api";
 import { ISportsperson } from "api/query";
 
 export interface StateProps {
-    sportspeople: Res<ISportsperson[]>,
+    sportspeople: Res<ISportsperson[]>;
+    error: GlobalErrorInfo | null;
 }
 export interface ActionProps {
     sportspeopleFetch: typeof FactsStore.actions.sportspeopleFetch,
@@ -24,7 +26,10 @@ export class FactsView extends React.Component<FactsViewProps> {
     }
 
     public render() {
-        const { sportspeople } = this.props;
+        const { error, sportspeople } = this.props;
+        if (error) {
+            return <span className="warning">{error.errorId}</span>
+        }
         return sportspeople.loading
             ? <Loading />
             : <ResultsTable results={sportspeople.result} /> ;
@@ -35,6 +40,7 @@ const wrap = compose(
     connect<StateProps, ActionProps, OwnProps, RootState>(
         (state) => ({
             sportspeople: state.facts.sportspeople,
+            error: state.global.error,
         }),
         { 
             sportspeopleFetch: FactsStore.actions.sportspeopleFetch

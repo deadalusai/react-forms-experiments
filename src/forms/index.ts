@@ -2,7 +2,7 @@
 // Forms
 //
 
-export interface ErrorType {
+export interface FormError {
     error: string;
     params?: any;
 };
@@ -11,7 +11,7 @@ export interface FieldMeta {
     valid: boolean;
     touched: boolean;
     dirty: boolean;
-    error: ErrorType | null;
+    error: FormError | null;
 }
 
 export interface FormMeta {
@@ -37,7 +37,7 @@ export type Form<TForm = any> = {
     meta: FormMeta;
 };
 
-export type FieldValidator<TValue = any> = (value: TValue) => ErrorType | null;
+export type FieldValidator<TValue = any> = (value: TValue) => FormError | null;
 
 export type FormValidators<TForm = any> = {
     [TKey in keyof TForm]?: FieldValidator<TForm[TKey]>;
@@ -193,7 +193,7 @@ export function touchFormFields<TForm>(form: Form<TForm>): Form<TForm> {
 //
 
 export function combineValidators<TValue>(...validators: FieldValidator<TValue>[]): FieldValidator<TValue> {
-    return value => validators.reduce((error, validator) => error || validator(value), null as ErrorType | null);
+    return value => validators.reduce((error, validator) => error || validator(value), null as FormError | null);
 }
 
 function required(error = "ERROR.REQUIRED"): FieldValidator {

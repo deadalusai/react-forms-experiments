@@ -1,12 +1,19 @@
 import * as React from "react";
 
-import { ErrorType, Field, touchField } from "forms";
+import { FormError, Field, touchField } from "forms";
 
 export interface ErrorMessageProps {
-    error: ErrorType;
+    error: FormError;
 }
 export function ErrorMessage({ error }: ErrorMessageProps) {
     return <span className="form-field-error">{error.error}</span>
+}
+
+export interface WarningMessageProps {
+    error: FormError;
+}
+export function WarningMessage({ error }: ErrorMessageProps) {
+    return <span className="form-field-warning">{error.error}</span>
 }
 
 export interface TextInputProps {

@@ -1,5 +1,6 @@
 import { combineReducers, createStore, applyMiddleware, compose } from "redux";
 import createSagaMiddleware from "redux-saga";
+import { FormStateMap, reducer as reduxFormReducer } from "redux-form";
 
 import { FactsState, reducer as factsReducer } from "./facts";
 import { GlobalState, reducer as globalReducer } from "./global";
@@ -10,12 +11,14 @@ export type RootState = {
     global: GlobalState,
     facts: FactsState,
     forms: FormsState,
+    form: FormStateMap,
 }
 
 const rootReducer = combineReducers<RootState>({
     global: globalReducer,
     facts: factsReducer,
     forms: formsReducer,
+    form: reduxFormReducer,
 });
 
 const sagaMiddleware = createSagaMiddleware();
