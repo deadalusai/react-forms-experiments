@@ -4,7 +4,7 @@ import { compose } from "redux";
 
 import { RootState } from "store";
 import * as FormStore from "store/forms";
-import { Form, Field, FormValidators, combineValidators, validators } from "forms";
+import { Form, FieldChange, createFormValidator, combineValidators, validators } from "forms";
 import { TextInput, SelectInput, Option } from "components/forms";
 
 const FORM_NAME = "my-form";
@@ -14,7 +14,7 @@ interface MyForm {
     field3: number | null;
 }
 
-const formValidators: FormValidators<MyForm> = {
+const formValidator = createFormValidator<MyForm>({
     field1: combineValidators(
         validators.required(),
         validators.pattern(/hello/i, "ERROR.MUST_CONTAIN_HELLO"),
@@ -27,7 +27,7 @@ const formValidators: FormValidators<MyForm> = {
         validators.greaterThan(1),
         value => (value == 3) ? { error: "ERROR.THREE_NOT_ALLOWED", params: { value } } : null,
     ),
-};
+});
 
 export interface StateProps {
     form: Form<MyForm> | undefined;
@@ -49,7 +49,7 @@ export class MyFormView extends React.Component<MyFormViewProps> {
             field2: null,
             field3: null,
         };
-        this.props.initForm(FORM_NAME, data, formValidators);
+        this.props.initForm(FORM_NAME, data, formValidator);
     }
 
     public render() {
@@ -57,7 +57,7 @@ export class MyFormView extends React.Component<MyFormViewProps> {
         if (!form) {
             return null
         }
-        const onFieldChange = (field: Field) => this.props.updateForm(form.name, field, formValidators);
+        const onFieldChange = (change: FieldChange) => this.props.updateForm(form.name, change, formValidator);
         const initial = form.initial;
         const data = {
             field1: form.fields.field1.value,
@@ -78,13 +78,13 @@ export class MyFormView extends React.Component<MyFormViewProps> {
         return (
             <section>
                 <div>
-                    <TextInput label="Field one" field={form.fields.field1} fieldChange={onFieldChange} />
+                    <TextInput label="Field one" field={form.fields.field1} onFieldChange={onFieldChange} />
                 </div>
                 <div>
-                    <TextInput label="Field two" field={form.fields.field2} fieldChange={onFieldChange} />
+                    <TextInput label="Field two" field={form.fields.field2} onFieldChange={onFieldChange} />
                 </div>
                 <div>
-                    <SelectInput label="Field three" field={form.fields.field3} fieldChange={onFieldChange}>
+                    <SelectInput label="Field three" field={form.fields.field3} onFieldChange={onFieldChange}>
                         <Option label="NO SELECTION" value={null} />
                         {options.map((o, i) => <Option key={i} {...o} />)}
                     </SelectInput>
@@ -115,7 +115,7 @@ export class MyFormView extends React.Component<MyFormViewProps> {
 
     public reset(form: Form<MyForm>) {
         // Re-initialise the form
-        this.props.initForm(form.name, form.initial, formValidators);
+        this.props.initForm(form.name, form.initial, formValidator);
     }
 }
 

@@ -4,9 +4,8 @@ import { compose } from "redux";
 import { Field, reduxForm, InjectedFormProps, FormErrors, WrappedFieldProps, formValueSelector, FormState } from 'redux-form'
 
 import { RootState } from "store";
-import { FormError } from "forms";
+import { FieldError } from "forms";
 import { ErrorMessage, WarningMessage } from "components/forms";
-import { object } from "prop-types";
 
 const FORM_NAME = "redux-form";
 interface TestFormData {
@@ -22,7 +21,7 @@ const INITIAL_VALUES: TestFormData = {
 };
 
 const VALIDATE_FORM = (values: TestFormData) => {
-    const errors: FormErrors<TestFormData, FormError> = {};
+    const errors: FormErrors<TestFormData, FieldError> = {};
     if (!values.firstName) {
         errors.firstName = { error: "ERROR.REQUIRED" };
     } else if (values.firstName.length > 15) {
@@ -48,7 +47,7 @@ export interface StateProps {
 export interface ActionProps { }
 export interface OwnProps { }
 
-export type ReduxFormViewProps = StateProps & ActionProps & OwnProps & InjectedFormProps<TestFormData, {}, FormError>;
+export type ReduxFormViewProps = StateProps & ActionProps & OwnProps & InjectedFormProps<TestFormData, {}, FieldError>;
 
 export class ReduxFormView extends React.Component<ReduxFormViewProps> {
 

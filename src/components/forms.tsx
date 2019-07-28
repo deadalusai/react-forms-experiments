@@ -1,16 +1,16 @@
 import * as React from "react";
 
-import { FormError, Field, touchField } from "forms";
+import { FieldError, Field, FieldChange } from "forms";
 
 export interface ErrorMessageProps {
-    error: FormError;
+    error: FieldError;
 }
 export function ErrorMessage({ error }: ErrorMessageProps) {
     return <span className="form-field-error">{error.error}</span>
 }
 
 export interface WarningMessageProps {
-    error: FormError;
+    error: FieldError;
 }
 export function WarningMessage({ error }: ErrorMessageProps) {
     return <span className="form-field-warning">{error.error}</span>
@@ -19,22 +19,24 @@ export function WarningMessage({ error }: ErrorMessageProps) {
 export interface TextInputProps {
     label?: React.ReactNode;
     field: Field<string | null>;
-    fieldChange: (value: Field<string | null>) => void;
+    onFieldChange: (value: FieldChange<string | null>) => void;
 }
-export function TextInput({ label, field, fieldChange }: TextInputProps) {
+export function TextInput({ label, field, onFieldChange }: TextInputProps) {
+    const { touched, visited, focused, error } = field.meta;
+    const { name } = field;
     return (
         <label className="form-field">
             <div>
-                {label || field.name}
+                {label || field.name} {focused ? "(focused)" : null}
             </div>
             <input
                 type="text"
                 value={field.value === null ? "" : field.value}
-                onChange={e => fieldChange(touchField(field, e.target.value))} />
-            {field.value &&
-                <button onClick={() => fieldChange(touchField(field, null))}>Clear</button>}
-            {field.meta.touched && field.meta.error &&
-                <ErrorMessage error={field.meta.error} />}
+                onFocus={() => onFieldChange({ name, focused: true })}
+                onBlur={() => onFieldChange({ name, visited: true, focused: false, })}
+                onChange={e => onFieldChange({ name, value: e.target.value, touched: true })} />
+            {field.value && <button onClick={() => onFieldChange({ name, touched: true })}>Clear</button>}
+            {(touched || visited) && error && <ErrorMessage error={error} />}
         </label>
     );
 }
@@ -56,10 +58,10 @@ function stringValue(value: SelectOptionValue): string {
 export interface SelectInputProps {
     label?: React.ReactNode;
     field: Field<SelectOptionValue>;
-    fieldChange: (value: Field<SelectOptionValue>) => void;
+    onFieldChange: (value: FieldChange<SelectOptionValue>) => void;
     children: (React.ReactElement<OptionProps> | React.ReactElement<OptionProps>[])[];
 }
-export function SelectInput({ label, field, fieldChange, children }: SelectInputProps) {
+export function SelectInput({ label, field, onFieldChange, children }: SelectInputProps) {
     function mapToTypedValue(selectedValue: string) {
         for (const child of children) {
             const options = (child instanceof Array) ? child : [child];
@@ -71,20 +73,22 @@ export function SelectInput({ label, field, fieldChange, children }: SelectInput
         }
         return null;
     }
+    const { touched, visited, focused, error } = field.meta;
+    const { name } = field;
     return (
         <label className="form-field">
             <div>
-                {label || field.name}
+                {label || field.name} {focused ? "(focused)" : null}
             </div>
             <select
                 value={stringValue(field.value)}
-                onChange={e => fieldChange(touchField(field, mapToTypedValue(e.target.value)))}>
+                onFocus={() => onFieldChange({ name, focused: true })}
+                onBlur={() => onFieldChange({ name, visited: true, focused: false })}
+                onChange={e => onFieldChange({ name, value: mapToTypedValue(e.target.value), touched: true })}>
                 {children}
             </select>
-            {field.value &&
-                <button onClick={() => fieldChange(touchField(field, null))}>Clear</button>}
-            {field.meta.touched && field.meta.error &&
-                <ErrorMessage error={field.meta.error} />}
+            {field.value && <button onClick={() => onFieldChange({ name, value: null, touched: true })}>Clear</button>}
+            {(touched || visited) && error && <ErrorMessage error={error} />}
         </label>
     )
 }

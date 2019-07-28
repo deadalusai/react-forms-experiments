@@ -2,17 +2,23 @@
 // Forms
 //
 
-export interface FormError {
+export interface FieldError {
     error: string;
     params?: any;
 };
 
 export interface FieldMeta {
     valid: boolean;
+    visited: boolean;
     touched: boolean;
+    focused: boolean;
     dirty: boolean;
-    error: FormError | null;
+    error: FieldError | null;
 }
+
+export type FormErrors<TForm> = {
+    [key in keyof TForm]?: FieldError;
+};
 
 export interface FormMeta {
     valid: boolean;
@@ -33,17 +39,13 @@ export type FormFields<TForm = any> = {
 export type Form<TForm = any> = {
     name: string;
     initial: TForm;
+    current: TForm;
     fields: FormFields<TForm>;
     meta: FormMeta;
 };
 
-export type FieldValidator<TValue = any> = (value: TValue) => FormError | null;
-
-export type FormValidators<TForm = any> = {
-    [TKey in keyof TForm]?: FieldValidator<TForm[TKey]>;
-};
-
-export type FieldOf<TForm, TKey extends keyof TForm = any, TValue extends TForm[TKey] = any> = Field<TValue, TKey>;
+export type FieldValidator<TValue = any> = (value: TValue) => FieldError | null;
+export type FormValidator<TForm = any> = (form: TForm) => FormErrors<TForm>;
 
 //
 // Functions
@@ -52,60 +54,25 @@ export type FieldOf<TForm, TKey extends keyof TForm = any, TValue extends TForm[
 const keysOf = Object.keys as <T>(obj: T) => (keyof T)[];
 
 /**
- * Calculates the new validation state of the given form field using the validation rules provided.
- * @param validators A validator map for the form this field belongs to.
- * @param field A field to calulate new validation state for.
- */
-export function validateField<TForm, TKey extends keyof TForm, TValue extends TForm[TKey]>(
-    field: Field<TValue, TKey>,
-    validators: FormValidators<TForm>
-): Field<TValue, TKey> {
-    const validator = validators[field.name];
-    const error = validator && validator(field.value) || null;
-    return {
-        ...field,
-        meta: {
-            ...field.meta,
-            valid: error === null,
-            error
-        }
-    };
-}
-
-/**
- * Updates the given field with a new value and marks it as touched.
- * @param field The field to touch
- * @param value The value to touch the field with
- */
-export function touchField<TField extends Field>(field: TField, value: any): TField {
-    return {
-        ...field,
-        value,
-        meta: {
-            ...field.meta,
-            touched: true
-        }
-    };
-}
-
-/**
  * Initialises a new form object.
  * @param name The name of the form.
  * @param initial The initial state of the form.
- * @param validators If provided, this validator collection is used to calculate the initial validation state.
+ * @param validator If provided, this form validator is used to calculate the initial form validation state.
  */
-export function createForm<TForm>(name: string, initial: TForm, validators?: FormValidators<TForm>): Form<TForm> {
+export function createForm<TForm>(name: string, initial: TForm, validator?: FormValidator<TForm>): Form<TForm> {
     const fields: FormFields<TForm> = {} as any;
+    const errors = validator && validator(initial);
     let valid = true;
     for (const name of keysOf(initial)) {
         const value = initial[name];
-        const validator = validators && validators[name];
-        const error = validator && validator(value) || null;
-        const meta = {
-            valid: error === null,
+        const error = errors && errors[name];
+        const meta: FieldMeta = {
+            valid: !error,
+            visited: false,
             touched: false,
+            focused: false,
             dirty: false,
-            error
+            error: error! || null, // todo: TSC gets confused here - not sure why
         };
         fields[name] = { name, value, meta };
         if (error) {
@@ -115,6 +82,7 @@ export function createForm<TForm>(name: string, initial: TForm, validators?: For
     return {
         name,
         initial,
+        current: initial,
         fields,
         meta: {
             valid,
@@ -124,41 +92,100 @@ export function createForm<TForm>(name: string, initial: TForm, validators?: For
     };
 }
 
+export type FieldChange<TValue = any> = {
+    name: string,
+    value?: TValue;
+    visited?: boolean;
+    touched?: boolean;
+    focused?: boolean;
+};
+
 /**
  * Updates the given form with the given field data.
  * NOTE: Field dirty state is always calulcated based on the initial state of the form.
  * @param form The form to update
- * @param field The field in the form to update.
+ * @param name The field in the form to update.
  */
-export function updateFormField<TForm, TKey extends keyof TForm, TValue extends TForm[TKey]>(
+export function updateFormField<TForm>(
     form: Form<TForm>,
-    field: Field<TValue, TKey>
+    update: FieldChange,
 ): Form<TForm> {
+    const name = update.name as keyof TForm;
+    const field = form.fields[name];
+    if (!field) {
+        return form;
+    }
+    const value = "value" in update ? update.value! : field.value;
     // Calculate new field meta
     const fieldMeta = {
-        valid: field.meta.valid,
-        touched: field.meta.touched,
-        dirty: field.value != form.initial[field.name],
-        error: field.meta.error,
+        ...field.meta,
+        touched: "touched" in update ? update.touched! : field.meta.touched,
+        focused: "focused" in update ? update.focused! : field.meta.focused,
+        visited: "visited" in update ? update.visited! : field.meta.visited,
+        dirty: value != form.initial[name],
     };
     // Calculate new form meta
-    const metaFor = (fieldName: keyof TForm) => fieldName === field.name ? fieldMeta : form.fields[fieldName].meta;
+    const metaFor = (fieldName: keyof TForm) => fieldName === name ? fieldMeta : form.fields[fieldName].meta;
     const names = keysOf(form.fields);
     const formMeta = {
-        valid: names.reduce((valid, name) => valid && metaFor(name).valid, true),
+        valid: form.meta.valid,
         touched: names.reduce((touched, name) => touched || metaFor(name).touched, false),
         dirty: names.reduce((dirty, name) => dirty || metaFor(name).dirty, false),
     };
     return {
         ...form,
-        meta: formMeta,
+        current: {
+            ...form.current,
+            [name]: value,
+        },
         fields: {
             ...form.fields,
-            [field.name]: {
+            [name]: {
                 ...field,
+                value,
                 meta: fieldMeta,
             },
+        },
+        meta: formMeta,
+    };
+}
+
+/**
+ * Updates the given form with the given field data.
+ * NOTE: Field dirty state is always calulcated based on the initial state of the form.
+ * @param form The form to update
+ * @param name The field in the form to update.
+ */
+export function updateFormErrors<TForm>(
+    form: Form<TForm>,
+    errors: FormErrors<TForm>,
+): Form<TForm> {
+    let valid = true;
+    // Calculate new field meta
+    const fields: FormFields<TForm> = { ...form.fields };
+    const names = keysOf(form.fields);
+    for (const name of names) {
+        const field = fields[name];
+        const error = errors[name];
+        fields[name] = {
+            ...field,
+            meta: {
+                ...field.meta,
+                valid: !error,
+                error,
+            }
+        };
+        if (error) {
+            valid = false;
         }
+    }
+    return {
+        ...form,
+        fields,
+        meta: {
+            ...form.meta,
+            valid,
+        },
     };
 }
 
@@ -192,8 +219,26 @@ export function touchFormFields<TForm>(form: Form<TForm>): Form<TForm> {
 // Validators
 //
 
+export type FieldValidatorMap<TForm = any> = {
+    [TKey in keyof TForm]?: FieldValidator<TForm[TKey]>;
+};
+
+export function createFormValidator<TForm>(fieldValidators: FieldValidatorMap<TForm>): (form: TForm) => FormErrors<TForm> {
+    return (form: TForm) => {
+        const errors: FormErrors<TForm> = {};
+        for (const key of keysOf(form)) {
+            const validator = fieldValidators[key];
+            const error = validator && validator(form[key]);
+            if (error) {
+                errors[key] = error;
+            }
+        }
+        return errors;
+    };
+}
+
 export function combineValidators<TValue>(...validators: FieldValidator<TValue>[]): FieldValidator<TValue> {
-    return value => validators.reduce((error, validator) => error || validator(value), null as FormError | null);
+    return value => validators.reduce((error, validator) => error || validator(value), null as FieldError | null);
 }
 
 function required(error = "ERROR.REQUIRED"): FieldValidator {

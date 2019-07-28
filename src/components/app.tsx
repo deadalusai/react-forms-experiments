@@ -7,7 +7,7 @@ import ReduxFormView from "components/reduxform";
 enum Page { facts, customForms, reduxForms }
 
 export function App() {
-    const [page, setPage] = React.useState(Page.reduxForms);
+    const [page, setPage] = React.useState(Page.customForms);
     return <>
         <header>
             <ul className="action-menu">

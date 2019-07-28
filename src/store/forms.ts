@@ -1,5 +1,5 @@
 import { ActionsFrom, assertNever } from "util";
-import { Form, FormValidators, createForm, Field, updateFormField, touchFormFields, validateField } from "forms";
+import { Form, FormValidator, createForm, updateFormField, touchFormFields, FieldChange, updateFormErrors } from "forms";
 
 //
 // State
@@ -32,7 +32,7 @@ export interface InitFormAction {
     type: typeof FORMS_INIT_FORM;
     form: Form;
 }
-function initForm<TForm>(name: string, initialValues: TForm, formValidators?: FormValidators<TForm>): InitFormAction {
+function initForm<TForm>(name: string, initialValues: TForm, formValidators?: FormValidator<TForm>): InitFormAction {
     const form = createForm<any>(name, initialValues, formValidators);
     return { type: FORMS_INIT_FORM, form };
 }
@@ -47,23 +47,27 @@ export const FORMS_UPDATE_FORM = "FORMS:UPDATE_FORM";
 export interface UpdateFormAction {
     type: typeof FORMS_UPDATE_FORM;
     name: string;
-    field: Field;
+    update: FieldChange;
+    validator: FormValidator | undefined;
 }
-function updateForm(name: string, field: Field, validators?: FormValidators): UpdateFormAction {
-    return {
-        type: FORMS_UPDATE_FORM,
-        name,
-        field: validators ? validateField(field, validators) : field
-    };
+function updateForm(name: string, update: FieldChange, validator?: FormValidator): UpdateFormAction {
+    return { type: FORMS_UPDATE_FORM, name, update, validator };
 }
 function updateFormReducer(state: FormsState, action: UpdateFormAction): FormsState {
-    const form = state[action.name];
+    let form = state[action.name];
     if (!form) {
         return state;
     }
+    // Apply new form changes
+    form = updateFormField(form, action.update);
+    // Apply validation only if the this includes a value change
+    if (action.validator && "value" in action.update) {
+        const errors = action.validator(form.current);
+        form = updateFormErrors(form, errors);
+    }
     return {
         ...state,
-        [form.name]: updateFormField(form, action.field),
+        [form.name]: form,
     };
 }
 
