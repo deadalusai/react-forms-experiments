@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 import { compose } from "redux";
 
 import { RootState } from "store";
-import { Form, FieldUpdate, createFormValidator, combineValidators, validators, FormComponentProps, withForm } from "forms";
+import { Form, FieldUpdate, FormComponentProps, combineValidators, createFormValidator, validators, withForm } from "forms";
 import { TextInput, SelectInput, Option } from "components/forms";
 
 const FORM_NAME = "my-form";
@@ -13,7 +13,8 @@ interface MyForm {
     field3: number | null;
 }
 
-const formValidator = createFormValidator<MyForm>({
+// Building a form validation routine using validator composition
+const fieldValidator = createFormValidator<MyForm>({
     field1: combineValidators(
         validators.required(),
         validators.pattern(/hello/i, "ERROR.MUST_CONTAIN_HELLO"),
@@ -27,6 +28,16 @@ const formValidator = createFormValidator<MyForm>({
         value => (value == 3) ? { error: "ERROR.THREE_NOT_ALLOWED", params: { value } } : null,
     ),
 });
+
+// Building a form validation routine manually
+const formValidator = (form: MyForm) => {
+    const errors = fieldValidator(form);
+    // Cross-field validation example
+    if (!errors.field2 && form.field1 != form.field2) {
+        errors.field2 = { error: "ERROR.FIELD1_FIELD2_MUST_MATCH" };
+    }
+    return errors;
+};
 
 export interface StateProps {}
 export interface ActionProps {}
@@ -70,22 +81,33 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
         ];
         return (
             <section>
-                <div>
-                    <TextInput label="Field one" field={form.fields.field1} onFieldChange={onFieldChange} />
-                </div>
-                <div>
-                    <TextInput label="Field two" field={form.fields.field2} onFieldChange={onFieldChange} />
-                </div>
-                <div>
-                    <SelectInput label="Field three" field={form.fields.field3} onFieldChange={onFieldChange}>
-                        <Option label="NO SELECTION" value={null} />
-                        {options.map((o, i) => <Option key={i} {...o} />)}
-                    </SelectInput>
-                </div>
-                <div>
-                    <button onClick={() => this.submit(form)}>Submit</button>
-                    <button onClick={() => this.reset(form)}>Reset</button>
-                </div>
+                <form onSubmit={(e) => { e.preventDefault(); this.submit(form); }}>
+                    <div>
+                        <TextInput
+                            label="Field one"
+                            field={form.fields.field1}
+                            fieldChange={onFieldChange} />
+                    </div>
+                    <div>
+                        <TextInput
+                            label="Field two"
+                            field={form.fields.field2}
+                            fieldChange={onFieldChange} />
+                    </div>
+                    <div>
+                        <SelectInput
+                            label="Field three"
+                            field={form.fields.field3}
+                            fieldChange={onFieldChange}>
+                            <Option label="NO SELECTION" value={null} />
+                            {options.map((o, i) => <Option key={i} {...o} />)}
+                        </SelectInput>
+                    </div>
+                    <div>
+                        <button type="submit">Submit</button>
+                        <button type="button" onClick={() => this.reset(form)}>Reset</button>
+                    </div>
+                </form>
                 <pre>
                     initial: {JSON.stringify(initial, null, 4)}
                 </pre>
@@ -100,10 +122,12 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
     }
 
     public submit(form: Form<MyForm>) {
-        this.props.formTouch();
-        if (form.meta.valid) {
-            // TODO: submit
+        if (!form.meta.valid) {
+            this.props.formTouch();
+            return;
         }
+        const json = JSON.stringify(form.current, null, 4);
+        alert(json);
     }
 
     public reset(form: Form<MyForm>) {

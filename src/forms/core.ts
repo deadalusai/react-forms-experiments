@@ -106,10 +106,7 @@ export type FieldUpdate<TForm = any, TValue = any> = {
  * @param form The form to update
  * @param name The field in the form to update.
  */
-export function updateFormField<TForm>(
-    form: Form<TForm>,
-    update: FieldUpdate<TForm>,
-): Form<TForm> {
+export function updateFormField<TForm>(form: Form<TForm>, update: FieldUpdate<TForm>): Form<TForm> {
     const name = update.name;
     const field = form.fields[name];
     if (!field) {
@@ -128,7 +125,7 @@ export function updateFormField<TForm>(
     const metaFor = (fieldName: keyof TForm) => fieldName === name ? fieldMeta : form.fields[fieldName].meta;
     const names = keysOf(form.fields);
     const formMeta = {
-        valid: form.meta.valid,
+        ...form.meta,
         touched: names.reduce((touched, name) => touched || metaFor(name).touched, false),
         dirty: names.reduce((dirty, name) => dirty || metaFor(name).dirty, false),
     };
@@ -156,10 +153,7 @@ export function updateFormField<TForm>(
  * @param form The form to update
  * @param name The field in the form to update.
  */
-export function updateFormErrors<TForm>(
-    form: Form<TForm>,
-    errors: FormErrors<TForm>,
-): Form<TForm> {
+export function updateFormErrors<TForm>(form: Form<TForm>, errors: FormErrors<TForm>): Form<TForm> {
     let valid = true;
     // Calculate new field meta
     const fields: FormFields<TForm> = { ...form.fields };

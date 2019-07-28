@@ -16,9 +16,10 @@ export interface FormComponentProps<TForm = any> {
 }
 
 export interface FormOptions {
+    /** The name of the form, global to the app */
     name: string;
+    /** A validation function for the form */
     validator?: FormValidator;
-    stateName?: string;
 }
 
 export function withForm<TOwnProps = {}, TForm = any>(options: FormOptions) {
@@ -26,27 +27,15 @@ export function withForm<TOwnProps = {}, TForm = any>(options: FormOptions) {
         // High-order component options
         const formName = options.name;
         const formValidator = options.validator;
-        const formsStateName = options.stateName || "forms";
-        // The public interface of the wrapped component
+        // The public interface of the wrapped component.
         let form: Form<TForm> | null = null;
         let formInit: (initial: TForm) => void;
         let formTouch: () => void;
         let formUpdateField: (update: FieldUpdate<TForm>) => void;
-        
-        const FormComponent = (props: TOwnProps) => {
-            const formProps: FormComponentProps<TForm> = {
-                form,
-                formInit,
-                formTouch,
-                formUpdateField,
-            };
-            return <WrappedComponent {...props} {...formProps} />;
-        };
-
-        // Connect this component to the store. 
+        // Connect the component to the store (this initializes the public interface)
         const wrap = connect<StoreProps<TForm>, any, TOwnProps, any>(
             (rootState) => {
-                form = rootState[formsStateName][formName] || null;
+                form = rootState["forms"][formName] || null;
                 return { form };
             },
             (dispatch) => {
@@ -75,7 +64,16 @@ export function withForm<TOwnProps = {}, TForm = any>(options: FormOptions) {
                 };
             }
         );
-
+        // Forward the props props to the wrapped component type, merging in our public interface
+        const FormComponent = (props: TOwnProps) => {
+            const formProps: FormComponentProps<TForm> = {
+                form,
+                formInit,
+                formTouch,
+                formUpdateField,
+            };
+            return <WrappedComponent {...props} {...formProps} />;
+        };
         return wrap(FormComponent); 
     };
 }
