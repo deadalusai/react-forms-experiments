@@ -1,5 +1,5 @@
 import { ActionsFrom, assertNever } from "util";
-import { Form, FormValidator, createForm, updateFormField, touchFormFields, FieldChange, updateFormErrors } from "forms";
+import { Form } from "forms";
 
 //
 // State
@@ -32,8 +32,7 @@ export interface InitFormAction {
     type: typeof FORMS_INIT_FORM;
     form: Form;
 }
-function initForm<TForm>(name: string, initialValues: TForm, formValidators?: FormValidator<TForm>): InitFormAction {
-    const form = createForm<any>(name, initialValues, formValidators);
+function initForm(form: Form): InitFormAction {
     return { type: FORMS_INIT_FORM, form };
 }
 function initFormReducer(state: FormsState, action: InitFormAction): FormsState {
@@ -46,47 +45,20 @@ function initFormReducer(state: FormsState, action: InitFormAction): FormsState 
 export const FORMS_UPDATE_FORM = "FORMS:UPDATE_FORM";
 export interface UpdateFormAction {
     type: typeof FORMS_UPDATE_FORM;
-    name: string;
-    update: FieldChange;
-    validator: FormValidator | undefined;
+    form: Form;
 }
-function updateForm(name: string, update: FieldChange, validator?: FormValidator): UpdateFormAction {
-    return { type: FORMS_UPDATE_FORM, name, update, validator };
+function updateForm(form: Form): UpdateFormAction {
+    return { type: FORMS_UPDATE_FORM, form };
 }
 function updateFormReducer(state: FormsState, action: UpdateFormAction): FormsState {
-    let form = state[action.name];
+    let form = state[action.form.name];
     if (!form) {
-        return state;
-    }
-    // Apply new form changes
-    form = updateFormField(form, action.update);
-    // Apply validation only if the this includes a value change
-    if (action.validator && "value" in action.update) {
-        const errors = action.validator(form.current);
-        form = updateFormErrors(form, errors);
-    }
-    return {
-        ...state,
-        [form.name]: form,
-    };
-}
-
-export const FORMS_TOUCH_FORM = "FORMS:TOUCH_FORM";
-export interface TouchFormAction {
-    type: typeof FORMS_TOUCH_FORM;
-    name: string;
-}
-function touchForm(name: string): TouchFormAction {
-    return { type: FORMS_TOUCH_FORM, name };
-}
-function touchFormReducer(state: FormsState, action: TouchFormAction): FormsState {
-    const form = state[action.name];
-    if (!form) {
+        // Form not initialised?
         return state;
     }
     return {
         ...state,
-        [form.name]: touchFormFields(form),
+        [form.name]: action.form,
     };
 }
 
@@ -97,7 +69,6 @@ function touchFormReducer(state: FormsState, action: TouchFormAction): FormsStat
 export const actions = {
     initForm,
     updateForm,
-    touchForm,
 };
 
 export function reducer(state: FormsState | undefined, action: ActionsFrom<typeof actions>) {
@@ -109,8 +80,6 @@ export function reducer(state: FormsState | undefined, action: ActionsFrom<typeo
             return initFormReducer(state, action);
         case FORMS_UPDATE_FORM:
             return updateFormReducer(state, action);
-        case FORMS_TOUCH_FORM:
-            return touchFormReducer(state, action);
         default:
             assertNever(action);
     }

@@ -3,14 +3,13 @@ import { connect } from "react-redux";
 import { compose } from "redux";
 
 import { RootState } from "store";
-import * as FormStore from "store/forms";
-import { Form, FieldChange, createFormValidator, combineValidators, validators } from "forms";
+import { Form, FieldUpdate, createFormValidator, combineValidators, validators, FormComponentProps, withForm } from "forms";
 import { TextInput, SelectInput, Option } from "components/forms";
 
 const FORM_NAME = "my-form";
 interface MyForm {
-    field1: string | null;
-    field2: string | null;
+    field1: string;
+    field2: string;
     field3: number | null;
 }
 
@@ -29,27 +28,21 @@ const formValidator = createFormValidator<MyForm>({
     ),
 });
 
-export interface StateProps {
-    form: Form<MyForm> | undefined;
-}
-export interface ActionProps {
-    initForm: typeof FormStore.actions.initForm;
-    updateForm: typeof FormStore.actions.updateForm;
-    touchForm: typeof FormStore.actions.touchForm;
-}
+export interface StateProps {}
+export interface ActionProps {}
 export interface OwnProps {}
 
 export type MyFormViewProps = StateProps & ActionProps & OwnProps;
 
-export class MyFormView extends React.Component<MyFormViewProps> {
+export class MyFormView extends React.Component<MyFormViewProps & FormComponentProps<MyForm>> {
 
     public componentWillMount() {
         const data: MyForm = {
-            field1: null,
-            field2: null,
+            field1: "",
+            field2: "",
             field3: null,
         };
-        this.props.initForm(FORM_NAME, data, formValidator);
+        this.props.formInit(data);
     }
 
     public render() {
@@ -57,7 +50,7 @@ export class MyFormView extends React.Component<MyFormViewProps> {
         if (!form) {
             return null
         }
-        const onFieldChange = (change: FieldChange) => this.props.updateForm(form.name, change, formValidator);
+        const onFieldChange = (change: FieldUpdate) => this.props.formUpdateField(change);
         const initial = form.initial;
         const data = {
             field1: form.fields.field1.value,
@@ -107,7 +100,7 @@ export class MyFormView extends React.Component<MyFormViewProps> {
     }
 
     public submit(form: Form<MyForm>) {
-        this.props.touchForm(form.name);
+        this.props.formTouch();
         if (form.meta.valid) {
             // TODO: submit
         }
@@ -115,20 +108,18 @@ export class MyFormView extends React.Component<MyFormViewProps> {
 
     public reset(form: Form<MyForm>) {
         // Re-initialise the form
-        this.props.initForm(form.name, form.initial, formValidator);
+        this.props.formInit(form.initial);
     }
 }
 
-const wrap = compose(
+const wrap = compose<React.ComponentClass<OwnProps>>(
+    withForm({
+        name: FORM_NAME,
+        validator: formValidator,
+    }),
     connect<StateProps, ActionProps, OwnProps, RootState>(
-        (state) => ({
-            form: FormStore.selectors.getForm<MyForm>(state.forms, FORM_NAME),
-        }),
-        { 
-            initForm: FormStore.actions.initForm,
-            updateForm: FormStore.actions.updateForm,
-            touchForm: FormStore.actions.touchForm,
-        }
+        (_state) => ({}),
+        {}
     )
 );
 

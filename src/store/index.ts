@@ -4,7 +4,7 @@ import { FormStateMap, reducer as reduxFormReducer } from "redux-form";
 
 import { FactsState, reducer as factsReducer } from "./facts";
 import { GlobalState, reducer as globalReducer } from "./global";
-import { FormsState, reducer as formsReducer } from "./forms";
+import { FormsState, reducer as formsReducer } from "forms/store";
 import { saga as fooSaga } from "saga/facts";
 
 export type RootState = {
