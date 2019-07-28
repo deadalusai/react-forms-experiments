@@ -10,9 +10,9 @@ interface StoreProps<TForm = any> {
 
 export interface FormComponentProps<TForm = any> {
     form: Form<TForm> | undefined;
-    formInit: (initial: TForm) => void;
-    formTouch: () => void;
-    formUpdateField: (update: FieldUpdate<TForm>) => void;
+    formInit: (initial: TForm) => Form<TForm>;
+    formTouch: () => Form<TForm>;
+    formUpdateField: (update: FieldUpdate<TForm>) => Form<TForm>;
 }
 
 export interface FormOptions {
@@ -35,17 +35,19 @@ function lift<TForm, TOwnProps>(
             formInit: (initial) => {
                 form = createForm<TForm>(options.name, initial, options.validator);
                 setState(form);
+                return form;
             },
             formTouch: () => {
                 if (!form) {
-                    return;
+                    throw new Error("Called formTouch before formInit");
                 }
                 form = touchFormFields(form);
                 setState(form);
+                return form;
             },
             formUpdateField: (update) => {
                 if (!form) {
-                    return;
+                    throw new Error("Called formUpdateField before formInit");
                 }
                 form = updateFormField<TForm>(form, update);
                 // Apply validation?
@@ -54,6 +56,7 @@ function lift<TForm, TOwnProps>(
                     form = updateFormErrors(form, errors);
                 }
                 setState(form);
+                return form;
             },
         };
         return <WrappedComponent {...props} {...formProps} />;

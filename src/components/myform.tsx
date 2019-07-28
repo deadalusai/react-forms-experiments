@@ -6,12 +6,14 @@ import { RootState } from "store";
 import { Form, FieldUpdate, FormComponentProps, withStoreBackedForm } from "forms";
 import { TextInput, SelectInput, Option } from "components/forms";
 import * as Validators from "forms/validators";
+import SubFormView, { SubForm } from "./subform";
 
 const FORM_NAME = "my-form";
 interface MyForm {
     field1: string;
     field2: string;
     field3: number | null;
+    field4: SubForm;
 }
 
 // Building a form validation routine using validator composition
@@ -53,6 +55,10 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
             field1: "",
             field2: "",
             field3: null,
+            field4: {
+                sub1: "",
+                sub2: "",
+            }
         };
         this.props.formInit(data);
     }
@@ -63,18 +69,6 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
             return null
         }
         const onFieldChange = (change: FieldUpdate) => this.props.formUpdateField(change);
-        const initial = form.initial;
-        const data = {
-            field1: form.fields.field1.value,
-            field2: form.fields.field2.value,
-            field3: form.fields.field3.value,
-        };
-        const meta = {
-            form: form.meta,
-            field1: form.fields.field1.meta,
-            field2: form.fields.field2.meta,
-            field3: form.fields.field3.meta,
-        };
         const options = [
             { label: "Option one", value: 1 },
             { label: "Option two", value: 2 },
@@ -104,19 +98,22 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                             {options.map((o, i) => <Option key={i} {...o} />)}
                         </SelectInput>
                     </div>
+                    <SubFormView
+                        value={form.fields.field4.value}
+                        valueChange={value => onFieldChange({ name: "field4", value, touched: true })} />
                     <div>
                         <button type="submit">Submit</button>
                         <button type="button" onClick={() => this.reset(form)}>Reset</button>
                     </div>
                 </form>
                 <pre>
-                    initial: {JSON.stringify(initial, null, 4)}
+                    initial: {JSON.stringify(form.initial, null, 4)}
                 </pre>
                 <pre>
-                    data: {JSON.stringify(data, null, 4)}
+                    data: {JSON.stringify(form.current, null, 4)}
                 </pre>
                 <pre>
-                    meta: {JSON.stringify(meta, null, 4)}
+                    meta: {JSON.stringify({ meta: form.meta, fields: form.fields }, null, 4)}
                 </pre>
             </section>
         );
