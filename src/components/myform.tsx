@@ -3,8 +3,9 @@ import { connect } from "react-redux";
 import { compose } from "redux";
 
 import { RootState } from "store";
-import { Form, FieldUpdate, FormComponentProps, combineValidators, createFormValidator, validators, withForm } from "forms";
+import { Form, FieldUpdate, FormComponentProps, withStoreBackedForm } from "forms";
 import { TextInput, SelectInput, Option } from "components/forms";
+import * as Validators from "forms/validators";
 
 const FORM_NAME = "my-form";
 interface MyForm {
@@ -14,17 +15,17 @@ interface MyForm {
 }
 
 // Building a form validation routine using validator composition
-const fieldValidator = createFormValidator<MyForm>({
-    field1: combineValidators(
-        validators.required(),
-        validators.pattern(/hello/i, "ERROR.MUST_CONTAIN_HELLO"),
+const fieldValidator = Validators.createFormValidator<MyForm>({
+    field1: Validators.combine(
+        Validators.required(),
+        Validators.pattern(/hello/i, "ERROR.MUST_CONTAIN_HELLO"),
     ),
-    field2: combineValidators(
-        validators.required(),
+    field2: Validators.combine(
+        Validators.required(),
     ),
-    field3: combineValidators(
-        validators.required(),
-        validators.greaterThan(1),
+    field3: Validators.combine(
+        Validators.required(),
+        Validators.greaterThan(1),
         value => (value == 3) ? { error: "ERROR.THREE_NOT_ALLOWED", params: { value } } : null,
     ),
 });
@@ -137,7 +138,7 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
 }
 
 const wrap = compose<React.ComponentClass<OwnProps>>(
-    withForm({
+    withStoreBackedForm({
         name: FORM_NAME,
         validator: formValidator,
     }),
