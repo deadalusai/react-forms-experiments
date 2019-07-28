@@ -5,11 +5,11 @@ import * as FormsStore from "forms/store";
 import { Form, FieldUpdate, createForm, FormValidator, updateFormField, updateFormErrors, touchFormFields } from "forms/core";
 
 interface StoreProps<TForm = any> {
-    form: Form<TForm> | null;
+    form: Form<TForm> | undefined;
 }
 
 export interface FormComponentProps<TForm = any> {
-    form: Form<TForm> | null;
+    form: Form<TForm> | undefined;
     formInit: (initial: TForm) => void;
     formTouch: () => void;
     formUpdateField: (update: FieldUpdate<TForm>) => void;
@@ -25,22 +25,22 @@ export interface FormOptions {
 /**
  * Higher-order component which provides a redux-backed FormComponentProps implementation
  * 
- * @param options Configuration options for the form. 
+ * @param options Configuration options for the form.
  */
-export function withForm<TOwnProps = {}, TForm = any>(options: FormOptions) {
+export function withStoreBackedForm<TOwnProps = {}, TForm = any>(options: FormOptions) {
     return (WrappedComponent: React.ComponentClass<TOwnProps & FormComponentProps<TForm>>) => {
         // High-order component options
         const formName = options.name;
         const formValidator = options.validator;
         // The public interface of the wrapped component.
-        let form: Form<TForm> | null = null;
+        let form: Form<TForm> | undefined = undefined;
         let formInit: (initial: TForm) => void;
         let formTouch: () => void;
         let formUpdateField: (update: FieldUpdate<TForm>) => void;
         // Connect the component to the store (this initializes the public interface)
         const wrap = connect<StoreProps<TForm>, any, TOwnProps, any>(
             (rootState) => {
-                form = rootState["forms"][formName] || null;
+                form = rootState["forms"][formName];
                 return { form };
             },
             (dispatch) => { 
@@ -80,5 +80,49 @@ export function withForm<TOwnProps = {}, TForm = any>(options: FormOptions) {
             return <WrappedComponent {...props} {...formProps} />;
         };
         return wrap(FormComponent); 
+    };
+}
+
+/**
+ * Higher-order component which provides a form state-backed FormComponentProps implementation
+ * 
+ * @param options Configuration options for the form.
+ */
+export function withStateBackedForm<TOwnProps = {}, TForm = any>(options: FormOptions) {
+    return (WrappedComponent: React.ComponentClass<TOwnProps & FormComponentProps<TForm>>) => {
+        const formName = options.name;
+        const formValidator = options.validator;
+        const FormComponent = (props: TOwnProps) => {
+            let [form, setForm] = React.useState<Form<TForm>>();
+            // The public interface of the wrapped component.
+            const formProps: FormComponentProps<TForm> = {
+                form,
+                formInit: (initial) => {
+                    form = createForm<TForm>(formName, initial, formValidator);
+                    setForm(form);
+                },
+                formTouch: () => {
+                    if (!form) {
+                        return;
+                    }
+                    form = touchFormFields(form);
+                    setForm(form);
+                },
+                formUpdateField: (update) => {
+                    if (!form) {
+                        return;
+                    }
+                    form = updateFormField<TForm>(form, update);
+                    // Apply validation?
+                    if (formValidator && "value" in update) {
+                        const errors = formValidator(form.current);
+                        form = updateFormErrors(form, errors);
+                    }
+                    setForm(form);
+                },
+            };
+            return <WrappedComponent {...props} {...formProps} />;
+        };
+        return FormComponent; 
     };
 }
