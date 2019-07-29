@@ -4,16 +4,17 @@ import { compose } from "redux";
 
 import { RootState } from "store";
 import { Form, FieldUpdate, FormComponentProps, withStoreBackedForm } from "forms";
-import { TextInput, SelectInput, Option } from "components/forms";
 import * as Validators from "forms/validators";
-import SubFormView, { SubForm } from "./subform";
+import { keysOf } from "forms/core";
+import { TextInput, SelectInput, Option } from "components/forms";
+// import SubFormView, { SubForm } from "./subform";
 
 const FORM_NAME = "my-form";
 interface MyForm {
     field1: string;
     field2: string;
     field3: number | null;
-    field4: SubForm;
+    // field4: SubForm;
 }
 
 // Building a form validation routine using validator composition
@@ -50,24 +51,8 @@ export type MyFormViewProps = StateProps & ActionProps & OwnProps;
 
 export class MyFormView extends React.Component<MyFormViewProps & FormComponentProps<MyForm>> {
 
-    public componentWillMount() {
-        const data: MyForm = {
-            field1: "",
-            field2: "",
-            field3: null,
-            field4: {
-                sub1: "",
-                sub2: "",
-            }
-        };
-        this.props.formInit(data);
-    }
-
     public render() {
         const { form } = this.props;
-        if (!form) {
-            return null
-        }
         const onFieldChange = (change: FieldUpdate) => this.props.formUpdateField(change);
         const options = [
             { label: "Option one", value: 1 },
@@ -98,14 +83,27 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                             {options.map((o, i) => <Option key={i} {...o} />)}
                         </SelectInput>
                     </div>
-                    <SubFormView
+                    {/* <SubFormView
                         value={form.fields.field4.value}
-                        valueChange={value => onFieldChange({ name: "field4", value, touched: true })} />
+                        valueChange={value => onFieldChange({ name: "field4", value, touched: true })} /> */}
                     <div>
                         <button type="submit">Submit</button>
                         <button type="button" onClick={() => this.reset(form)}>Reset</button>
                     </div>
                 </form>
+                <section>
+                    {keysOf(form.fields).map(name => {
+                        const { meta } = form.fields[name];
+                        return (
+                            <button key={name} type="button" onClick={() => this.props.formUpdateField({ name, disabled: !meta.disabled })}>
+                                {meta.disabled ? "Enable" : "Disable"} {name}
+                            </button>
+                        );
+                    })}
+                    <button key={name} type="button" onClick={() => this.props.formUpdateAllFields({ disabled: !form.meta.disabled })}>
+                        {form.meta.disabled ? "Enable" : "Disable"} all fields
+                    </button>
+                </section>
                 <pre>
                     initial: {JSON.stringify(form.initial, null, 4)}
                 </pre>
@@ -121,7 +119,7 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
 
     public submit(form: Form<MyForm>) {
         if (!form.meta.valid) {
-            this.props.formTouch();
+            this.props.formUpdateAllFields({ touched: true });
             return;
         }
         const json = JSON.stringify(form.current, null, 4);
@@ -135,9 +133,18 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
 }
 
 const wrap = compose<React.ComponentClass<OwnProps>>(
-    withStoreBackedForm({
+    withStoreBackedForm<MyForm>({
         name: FORM_NAME,
         validator: formValidator,
+        initial: {
+            field1: "",
+            field2: "",
+            field3: null,
+            // field4: {
+            //     sub1: "",
+            //     sub2: "",
+            // }
+        }
     }),
     connect<StateProps, ActionProps, OwnProps, RootState>(
         (_state) => ({}),

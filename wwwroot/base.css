@@ -24,6 +24,12 @@ div.form-field label {
     display: block;
 }
 
+div.form-field--disabled label { text-decoration: line-through; }
+div.form-field--touched {}
+div.form-field--focused label { text-decoration: underline; }
+div.form-field--dirty {}
+div.form-field--pristine {}
+
 span.warning,
 span.error,
 span.form-field-warning,

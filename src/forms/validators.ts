@@ -1,6 +1,4 @@
-import { FieldValidator, FormErrors, FieldError } from "forms";
-
-const keysOf = Object.keys as <T>(obj: T) => (keyof T)[];
+import { FieldValidator, FormErrors, FieldError, keysOf } from "forms/core";
 
 export type FieldValidatorMap<TForm = any> = {
     [TKey in keyof TForm]?: FieldValidator<TForm[TKey]>;

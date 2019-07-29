@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { FieldError, Field, FieldUpdate } from "forms";
+import { FieldError, Field, FieldUpdate, FieldMeta } from "forms";
 
 export interface ErrorMessageProps {
     error: FieldError;
@@ -23,27 +23,36 @@ export function ClearButton({ onClick }: ClearButtonProps) {
     return <button type="button" onClick={onClick} tabIndex={-1} className="clear-button">Clear</button>;
 }
 
+function fieldClassName(meta: FieldMeta) {
+    return "form-field" +
+        (meta.disabled ? " form-field--disabled" : "") +
+        (meta.focused ? " form-field--focused" : "") +
+        (meta.touched ? " form-field--touched" : "") +
+        (meta.dirty ? " form-field--dirty" : " form-field--pristine");
+}
+
 export interface TextInputProps {
     label?: React.ReactNode;
     field: Field<string | null>;
     fieldChange: (value: FieldUpdate<any, string | null>) => void;
 }
 export function TextInput({ label, field, fieldChange }: TextInputProps) {
-    const { touched, visited, focused, error } = field.meta;
+    const { touched, visited, error, disabled } = field.meta;
     const { name } = field;
     return (
-        <div className="form-field">
+        <div className={fieldClassName(field.meta)}>
             <label htmlFor={field.name}>
-                {label || field.name} {focused ? "(focused)" : null}
+                {label || field.name}
             </label>
             <input
                 name={field.name}
                 type="text"
+                disabled={disabled}
                 value={field.value === null ? "" : field.value}
                 onFocus={() => fieldChange({ name, focused: true })}
                 onBlur={() => fieldChange({ name, visited: true, focused: false, })}
                 onChange={e => fieldChange({ name, value: e.target.value, touched: true })} />
-            {field.value && <ClearButton onClick={() => fieldChange({ name, value: "", touched: true })} />}
+            {!disabled && field.value && <ClearButton onClick={() => fieldChange({ name, value: "", touched: true })} />}
             {(touched || visited) && error && <ErrorMessage error={error} />}
         </div>
     );
@@ -81,22 +90,23 @@ export function SelectInput({ label, field, fieldChange, children }: SelectInput
         }
         return null;
     }
-    const { touched, visited, focused, error } = field.meta;
+    const { touched, visited, error, disabled } = field.meta;
     const { name } = field;
     return (
-        <div className="form-field">
+        <div className={fieldClassName(field.meta)}>
             <label htmlFor={field.name}>
-                {label || field.name} {focused ? "(focused)" : null}    
+                {label || field.name}
             </label>
             <select
                 name={field.name}
                 value={stringValue(field.value)}
+                disabled={disabled}
                 onFocus={() => fieldChange({ name, focused: true })}
                 onBlur={() => fieldChange({ name, visited: true, focused: false })}
                 onChange={e => fieldChange({ name, value: mapToTypedValue(e.target.value), touched: true })}>
                 {children}
             </select>
-            {field.value && <ClearButton onClick={() => fieldChange({ name, value: null, touched: true })} />}
+            {!disabled && field.value && <ClearButton onClick={() => fieldChange({ name, value: null, touched: true })} />}
             {(touched || visited) && error && <ErrorMessage error={error} />}
         </div>
     );
