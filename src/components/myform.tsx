@@ -12,14 +12,22 @@ const FORM_NAME = "my-form";
 
 enum FooType { foo1, foo2, foo3 };
 enum BarType { bar1 = "first", bar2 = "second", bar3 = "third" };
+enum BazType { baz1 = "aaa", baz2 = "bbb", baz3 = "ccc" }
 
 interface MyForm {
     text1: string;
     text2: string;
     checkbox1: boolean;
+    checkbox2: BazType | null;
     select1: FooType | null;
     radio1: BarType | null;
 }
+
+const CHECKBOX_OPTIONS = [
+    { label: "Baz one", value: BazType.baz1 },
+    { label: "Baz two", value: BazType.baz2 },
+    { label: "Baz three", value: BazType.baz3 },
+];
 
 const SELECT_OPTIONS = [
     { label: "Foo one", value: FooType.foo1 },
@@ -43,6 +51,7 @@ const formFieldValidator = Validators.createFormValidator<MyForm>({
         Validators.required(),
     ),
     checkbox1: Validators.required(),
+    checkbox2: Validators.required(),
     select1: Validators.combine(
         Validators.required(),
         Validators.greaterThan(1),
@@ -101,6 +110,19 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                     </InputContainer>
                     
                     <InputContainer
+                        label="Mutually-exclusive checkbox group"
+                        field={form.fields.checkbox2}>
+                        {CHECKBOX_OPTIONS.map((option) => (
+                            <CheckboxInput
+                                key={option.value}
+                                label={option.label}
+                                values={{ checked: option.value, unchecked: null }}
+                                field={form.fields.checkbox2}
+                                fieldChange={onFieldChange} />
+                        ))}
+                    </InputContainer>
+                    
+                    <InputContainer
                         label="Select input"
                         field={form.fields.select1}>
                         <SelectInput
@@ -108,7 +130,10 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                             fieldChange={onFieldChange}>
                             <SelectOption label="-- Please Select --" value={null} />
                             {SELECT_OPTIONS.map((option) => (
-                                <SelectOption key={option.value} {...option} />
+                                <SelectOption 
+                                    key={option.value}
+                                    label={option.label}
+                                    value={option.value} />
                             ))}
                         </SelectInput>
                     </InputContainer>
@@ -180,6 +205,7 @@ const wrap = compose<React.ComponentClass<OwnProps>>(
             text1: "",
             text2: "",
             checkbox1: false,
+            checkbox2: null,
             select1: null,
             radio1: null,
         }

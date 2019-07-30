@@ -13,13 +13,6 @@ export function ErrorMessage({ error }: ErrorMessageProps) {
     return <span className="form-field-error">{error.error}</span>
 }
 
-export interface ClearButtonProps {
-    onClick: () => void;
-}
-export function ClearButton({ onClick }: ClearButtonProps) {
-    return <button type="button" onClick={onClick} tabIndex={-1} className="clear-button">Clear</button>;
-}
-
 function fieldClassName(meta: FieldMeta) {
     return "form-field" +
         (meta.disabled ? " form-field--disabled" : "") +
@@ -30,11 +23,14 @@ function fieldClassName(meta: FieldMeta) {
 
 // This type can be used when we need to round-trip a value through a DOM prop.
 // Complex types can provide an id property.
-export type RoundTripValue = string | number | { id: string } | null;
+export type RoundTripValue = { id: string } | string | number | null | undefined;
 
 function stringValue(value: RoundTripValue): string {
     if (value === null) {
         return "__NULL__";
+    }
+    if (value === undefined) {
+        return "__UNDEFINED__";
     }
     if (typeof value === "object") {
         return value.id;
@@ -148,9 +144,7 @@ export function RadioInput({ label, value, field, fieldChange }: RadioInputProps
                 onFocus={() => fieldChange({ name: field.name, focused: true })}
                 onBlur={() => fieldChange({ name: field.name, visited: true, focused: false })}
                 onChange={() => fieldChange({ name: field.name, value, touched: true })} />
-            <span>
-                {label || field.name}
-            </span>
+            {label && <span>{label}</span>}
         </label>
     );
 }
@@ -161,23 +155,27 @@ export function RadioInput({ label, value, field, fieldChange }: RadioInputProps
 
 export interface CheckboxInputProps {
     label?: React.ReactNode;
-    field: Field<boolean>;
-    fieldChange: (value: FieldUpdate<any, boolean>) => void;
+    values?: { checked: any, unchecked: any };
+    field: Field;
+    fieldChange: (value: FieldUpdate) => void;
 }
-export function CheckboxInput({ label, field, fieldChange }: CheckboxInputProps) {
+export function CheckboxInput({ label, values, field, fieldChange }: CheckboxInputProps) {
+    // If no "checked/unchecked" values are provided fall back to a true/false flipflop
+    if (!values) {
+        values = { checked: true, unchecked: false };
+    }
+    const checked = field.value === values.checked;
     return (
         <label className="checkbox-item">
             <input
                 type="checkbox"
                 name={field.name}
                 disabled={field.meta.disabled}
-                checked={field.value}
+                checked={checked}
                 onFocus={() => fieldChange({ name: field.name, focused: true })}
                 onBlur={() => fieldChange({ name: field.name, visited: true, focused: false })}
-                onChange={() => fieldChange({ name: field.name, value: !field.value, touched: true })} />
-            <span>
-                {label || field.name}
-            </span>
+                onChange={() => fieldChange({ name: field.name, value: checked ? values!.unchecked : values!.checked, touched: true })} />
+            {label && <span>{label}</span>}
         </label>
     );
 }
