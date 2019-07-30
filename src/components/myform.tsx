@@ -6,7 +6,7 @@ import { RootState } from "store";
 import { Form, FieldUpdate, FormComponentProps, withStoreBackedForm } from "forms";
 import * as Validators from "forms/validators";
 import { keysOf } from "forms/core";
-import { TextInput, SelectInput, SelectOption, RadioInputGroup, RadioInput } from "components/forms";
+import { TextInput, SelectInput, SelectOption, RadioInputGroup, RadioInput, CheckboxInput } from "components/forms";
 
 const FORM_NAME = "my-form";
 
@@ -42,6 +42,7 @@ const formFieldValidator = Validators.createFormValidator<MyForm>({
     text2: Validators.combine(
         Validators.required(),
     ),
+    checkbox1: Validators.required(),
     select1: Validators.combine(
         Validators.required(),
         Validators.greaterThan(1),
@@ -87,6 +88,12 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                             fieldChange={onFieldChange} />
                     </div>
                     <div>
+                        <CheckboxInput
+                            label="Checkbox input"
+                            field={form.fields.checkbox1}
+                            fieldChange={onFieldChange} />
+                    </div>
+                    <div>
                         <SelectInput
                             label="Select input"
                             field={form.fields.select1}
@@ -102,10 +109,10 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                             {RADIO_OPTIONS.map((option) => (
                                 <RadioInput
                                     key={option.value}
-                                    field={form.fields.radio1}
-                                    fieldChange={onFieldChange}
                                     label={option.label}
-                                    value={option.value} />
+                                    value={option.value}
+                                    field={form.fields.radio1}
+                                    fieldChange={onFieldChange} />
                             ))}
                         </RadioInputGroup>
                     </div>
@@ -162,9 +169,9 @@ const wrap = compose<React.ComponentClass<OwnProps>>(
         initial: {
             text1: "",
             text2: "",
+            checkbox1: false,
             select1: null,
             radio1: null,
-            checkbox1: false,
         }
     }),
     connect<StateProps, ActionProps, OwnProps, RootState>(

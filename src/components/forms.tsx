@@ -181,3 +181,26 @@ export function RadioInput({ label, value, field, fieldChange }: RadioInputProps
 //
 // Checkbox
 //
+
+export interface CheckboxInputProps {
+    label?: React.ReactNode;
+    field: Field<boolean>;
+    fieldChange: (value: FieldUpdate<any, boolean>) => void;
+}
+export function CheckboxInput({ label, field, fieldChange }: CheckboxInputProps) {
+    return (
+        <label className="checkbox-item">
+            <input
+                type="checkbox"
+                name={field.name}
+                disabled={field.meta.disabled}
+                checked={field.value}
+                onFocus={() => fieldChange({ name: field.name, focused: true })}
+                onBlur={() => fieldChange({ name: field.name, visited: true, focused: false })}
+                onChange={() => fieldChange({ name: field.name, value: !field.value, touched: true })} />
+            <span>
+                {label || field.name}
+            </span>
+        </label>
+    );
+}

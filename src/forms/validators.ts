@@ -27,7 +27,7 @@ export function combine<TValue>(...validators: FieldValidator<TValue>[]): FieldV
 //
 
 export function required(error = "ERROR.REQUIRED"): FieldValidator {
-    return value => value === null || value === undefined || value === "" ? { error, params: { value } } : null;
+    return value => !value ? { error, params: { value } } : null;
 }
 
 export function number(error = "ERROR.MUST_BE_A_NUMBER"): FieldValidator {
