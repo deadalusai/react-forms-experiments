@@ -5,7 +5,7 @@ import { FormStateMap, reducer as reduxFormReducer } from "redux-form";
 import { FactsState, reducer as factsReducer } from "./facts";
 import { GlobalState, reducer as globalReducer } from "./global";
 import { FormsState, reducer as formsReducer } from "forms/store";
-import { saga as fooSaga } from "saga/facts";
+import { saga as factsSaga } from "saga/facts";
 
 export type RootState = {
     global: GlobalState,
@@ -26,7 +26,7 @@ const sagaMiddleware = createSagaMiddleware();
 const composeEnhancers =
     typeof window === 'object' &&
         "__REDUX_DEVTOOLS_EXTENSION_COMPOSE__" in window
-            ? (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__({ /* name, actionsBlacklist, actionsCreators, serialize... */  })
+            ? (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__({ /* name, actionsBlacklist, actionsCreators, serialize... */ })
             : compose;
 
 const enhancer = composeEnhancers(
@@ -38,4 +38,4 @@ export const store = createStore(
     enhancer
 );
 
-sagaMiddleware.run(fooSaga);
+sagaMiddleware.run(factsSaga);
