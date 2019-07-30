@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { FieldError, Field, FieldUpdate, FieldMeta } from "forms/core";
+import { FieldError, Field, FieldUpdate } from "forms/core";
 
 //
 // Utility components and functions
@@ -10,15 +10,7 @@ export interface ErrorMessageProps {
     error: FieldError;
 }
 export function ErrorMessage({ error }: ErrorMessageProps) {
-    return <span className="form-field-error">{error.error}</span>
-}
-
-function fieldClassName(meta: FieldMeta) {
-    return "form-field" +
-        (meta.disabled ? " form-field--disabled" : "") +
-        (meta.focused ? " form-field--focused" : "") +
-        (meta.touched ? " form-field--touched" : "") +
-        (meta.dirty ? " form-field--dirty" : " form-field--pristine");
+    return <span className="error">{error.error}</span>
 }
 
 // This type can be used when we need to round-trip a value through a DOM prop.
@@ -38,20 +30,40 @@ function stringValue(value: RoundTripValue): string {
     return value.toString();
 }
 
+const classString: (...parts: (string | null | undefined | false)[]) => string =
+    function () {
+        let str = "";
+        for (let i = 0; i < arguments.length; i++) {
+            if (arguments[i]) {
+                str += arguments[i] + " ";
+            }
+        }
+        return str;
+    };
+
 //
 // Input container
 //
 
 export interface InputContainerProps {
+    className?: string;
     label: React.ReactNode;
     field: Field;
     children: any;
 }
-export function InputContainer({ label, field, children }: InputContainerProps) {
+export function InputContainer({ className, label, field, children }: InputContainerProps) {
     const { touched, visited, error } = field.meta;
+    className = classString(
+        "input-container",
+        field.meta.disabled && "input-container--disabled",
+        field.meta.focused && "input-container--focused",
+        field.meta.touched && "input-container--touched",
+        field.meta.dirty ? "input-container--dirty" : "input-container--pristine",
+        className
+    );
     return (
-        <div className={fieldClassName(field.meta)}>
-            <label className="form-field--label" htmlFor={field.name}>
+        <div className={className}>
+            <label className="input-container--label" htmlFor={field.name}>
                 {label || field.name}
             </label>
             {children}
@@ -65,12 +77,14 @@ export function InputContainer({ label, field, children }: InputContainerProps) 
 //
 
 export interface TextInputProps {
+    className?: string;
     field: Field<string | null>;
     fieldChange: (value: FieldUpdate<any, string | null>) => void;
 }
-export function TextInput({ field, fieldChange }: TextInputProps) {
+export function TextInput({ className, field, fieldChange }: TextInputProps) {
     return (
         <input
+            className={classString("input--text", className)}
             name={name}
             type="text"
             disabled={field.meta.disabled}
@@ -86,11 +100,12 @@ export function TextInput({ field, fieldChange }: TextInputProps) {
 //
 
 export interface SelectInputProps {
+    className?: string;
     field: Field<RoundTripValue>;
     fieldChange: (value: FieldUpdate<any, RoundTripValue>) => void;
     children: (React.ReactElement<SelectOptionProps> | React.ReactElement<SelectOptionProps>[])[];
 }
-export function SelectInput({ field, fieldChange, children }: SelectInputProps) {
+export function SelectInput({ className, field, fieldChange, children }: SelectInputProps) {
     function mapToTypedValue(selectedValue: string) {
         for (const child of children) {
             const options = (child instanceof Array) ? child : [child];
@@ -104,6 +119,7 @@ export function SelectInput({ field, fieldChange, children }: SelectInputProps) 
     }
     return (
         <select
+            className={classString("input--select", className)}
             name={field.name}
             value={stringValue(field.value)}
             disabled={field.meta.disabled}
@@ -116,11 +132,12 @@ export function SelectInput({ field, fieldChange, children }: SelectInputProps) 
 }
 
 export interface SelectOptionProps {
+    className?: string;
     label: React.ReactNode;
     value: RoundTripValue;
 }
-export function SelectOption({ label, value }: SelectOptionProps) {
-    return <option value={stringValue(value)}>{label}</option>;
+export function SelectOption({ className, label, value }: SelectOptionProps) {
+    return <option className={className} value={stringValue(value)}>{label}</option>;
 }
 
 //
@@ -128,15 +145,17 @@ export function SelectOption({ label, value }: SelectOptionProps) {
 //
 
 export interface RadioInputProps {
+    className?: string,
     label?: React.ReactNode;
     value: any;
     field: Field<any>;
     fieldChange: (value: FieldUpdate<any, any>) => void;
 }
-export function RadioInput({ label, value, field, fieldChange }: RadioInputProps) {
+export function RadioInput({ className, label, value, field, fieldChange }: RadioInputProps) {
     return (
         <label className="radio-item">
             <input
+                className={classString("input--radio", className)}
                 type="radio"
                 name={field.name}
                 disabled={field.meta.disabled}
@@ -154,12 +173,13 @@ export function RadioInput({ label, value, field, fieldChange }: RadioInputProps
 //
 
 export interface CheckboxInputProps {
+    className?: string;
     label?: React.ReactNode;
     values?: { checked: any, unchecked: any };
     field: Field;
     fieldChange: (value: FieldUpdate) => void;
 }
-export function CheckboxInput({ label, values, field, fieldChange }: CheckboxInputProps) {
+export function CheckboxInput({ className, label, values, field, fieldChange }: CheckboxInputProps) {
     // If no "checked/unchecked" values are provided fall back to a true/false flipflop
     if (!values) {
         values = { checked: true, unchecked: false };
@@ -168,6 +188,7 @@ export function CheckboxInput({ label, values, field, fieldChange }: CheckboxInp
     return (
         <label className="checkbox-item">
             <input
+                className={classString("input--checkbox", className)}
                 type="checkbox"
                 name={field.name}
                 disabled={field.meta.disabled}
