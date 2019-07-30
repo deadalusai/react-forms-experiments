@@ -5,7 +5,7 @@ import { Field, reduxForm, InjectedFormProps, FormErrors, WrappedFieldProps, for
 
 import { RootState } from "store";
 import { FieldError } from "forms";
-import { ErrorMessage } from "forms/inputs";
+import { ErrorMessage } from "forms/controls";
 
 const FORM_NAME = "redux-form";
 interface TestFormData {

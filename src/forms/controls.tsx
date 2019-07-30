@@ -99,20 +99,22 @@ export function TextInput({ className, field, fieldChange }: TextInputProps) {
 // Select
 //
 
+export interface SelectInputOption {
+    label: React.ReactNode;
+    value: RoundTripValue;
+}
+
 export interface SelectInputProps {
     className?: string;
     field: Field<RoundTripValue>;
     fieldChange: (value: FieldUpdate<any, RoundTripValue>) => void;
-    children: (React.ReactElement<SelectOptionProps> | React.ReactElement<SelectOptionProps>[])[];
+    options: SelectInputOption[];
 }
-export function SelectInput({ className, field, fieldChange, children }: SelectInputProps) {
+export function SelectInput({ className, field, fieldChange, options }: SelectInputProps) {
     function mapToTypedValue(selectedValue: string) {
-        for (const child of children) {
-            const options = (child instanceof Array) ? child : [child];
-            for (const option of options) {
-                if (selectedValue === stringValue(option.props.value)) {
-                    return option.props.value;
-                }
+        for (const option of options) {
+            if (selectedValue === stringValue(option.value)) {
+                return option.value;
             }
         }
         return null;
@@ -126,18 +128,11 @@ export function SelectInput({ className, field, fieldChange, children }: SelectI
             onFocus={() => fieldChange({ name: field.name, focused: true })}
             onBlur={() => fieldChange({ name: field.name, visited: true, focused: false })}
             onChange={e => fieldChange({ name: field.name, value: mapToTypedValue(e.target.value), touched: true })}>
-            {children}
+            {options.map(option => (
+                <option className={className} value={stringValue(option.value)}>{option.label}</option>
+            ))}
         </select>
     );
-}
-
-export interface SelectOptionProps {
-    className?: string;
-    label: React.ReactNode;
-    value: RoundTripValue;
-}
-export function SelectOption({ className, label, value }: SelectOptionProps) {
-    return <option className={className} value={stringValue(value)}>{label}</option>;
 }
 
 //

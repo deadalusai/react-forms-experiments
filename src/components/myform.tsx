@@ -6,7 +6,7 @@ import { RootState } from "store";
 import { Form, FormComponentProps, injectStoreBackedForm } from "forms";
 import * as Validators from "forms/validators";
 import { keysOf } from "forms/core";
-import { InputContainer, TextInput, SelectInput, SelectOption, RadioInput, CheckboxInput } from "forms/inputs";
+import { InputContainer, TextInput, SelectInput, RadioInput, CheckboxInput } from "forms/controls";
 
 const FORM_NAME = "my-form";
 
@@ -30,6 +30,7 @@ const CHECKBOX_OPTIONS = [
 ];
 
 const SELECT_OPTIONS = [
+    { label: "-- Please select --", value: null },
     { label: "Foo one", value: FooType.foo1 },
     { label: "Foo two", value: FooType.foo2 },
     { label: "Foo three", value: FooType.foo3 },
@@ -126,15 +127,8 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                         field={form.fields.select1}>
                         <SelectInput
                             field={form.fields.select1}
-                            fieldChange={formUpdate}>
-                            <SelectOption label="-- Please Select --" value={null} />
-                            {SELECT_OPTIONS.map((option) => (
-                                <SelectOption 
-                                    key={option.value}
-                                    label={option.label}
-                                    value={option.value} />
-                            ))}
-                        </SelectInput>
+                            fieldChange={formUpdate}
+                            options={SELECT_OPTIONS} />
                     </InputContainer>
                     
                     <InputContainer
