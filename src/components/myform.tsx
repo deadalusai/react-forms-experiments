@@ -6,7 +6,7 @@ import { RootState } from "store";
 import { Form, FormComponentProps, injectStoreBackedForm } from "forms";
 import * as Validators from "forms/validators";
 import { keysOf } from "forms/core";
-import { InputContainer, TextInput, SelectInput, RadioInput, CheckboxInput } from "forms/controls";
+import { InputContainer, TextInput, SelectInput, MultiSelectInput, RadioInput, CheckboxInput } from "forms/controls";
 
 const FORM_NAME = "my-form";
 
@@ -20,23 +20,23 @@ interface MyForm {
     checkbox1: boolean;
     checkbox2: BazType | null;
     select1: FooType | null;
+    select2: FooType[];
     radio1: BarType | null;
 }
 
-const CHECKBOX_OPTIONS = [
+const BAZ_OPTIONS = [
     { label: "Baz one", value: BazType.baz1 },
     { label: "Baz two", value: BazType.baz2 },
     { label: "Baz three", value: BazType.baz3 },
 ];
 
-const SELECT_OPTIONS = [
-    { label: "-- Please select --", value: null },
+const FOO_OPTIONS = [
     { label: "Foo one", value: FooType.foo1 },
     { label: "Foo two", value: FooType.foo2 },
     { label: "Foo three", value: FooType.foo3 },
 ];
 
-const RADIO_OPTIONS = [
+const BAR_OPTIONS = [
     { label: "Bar one", value: BarType.bar1 },
     { label: "Bar two", value: BarType.bar2 },
     { label: "Bar three", value: BarType.bar3 },
@@ -57,6 +57,10 @@ const formFieldValidator = Validators.createFormValidator<MyForm>({
         Validators.required(),
         Validators.greaterThan(1),
         value => (value == 3) ? { error: "ERROR.THREE_NOT_ALLOWED", params: { value } } : null,
+    ),
+    select2: Validators.combine(
+        value => value.length === 0 ? { error: "ERROR.REQUIRED" } : null,
+        value => value.length > 2 ? { error: "ERROR.SELECT_AT_MOST_TWO_OPTIONS" } : null,
     ),
     radio1: Validators.required(),
 });
@@ -112,7 +116,7 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                     <InputContainer
                         label="Mutually-exclusive checkbox group"
                         field={form.fields.checkbox2}>
-                        {CHECKBOX_OPTIONS.map((option) => (
+                        {BAZ_OPTIONS.map((option) => (
                             <CheckboxInput
                                 key={option.value}
                                 label={option.label}
@@ -128,13 +132,25 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                         <SelectInput
                             field={form.fields.select1}
                             fieldChange={formUpdate}
-                            options={SELECT_OPTIONS} />
+                            options={[
+                                { label: "-- Please select --", value: null },
+                                ...FOO_OPTIONS,
+                            ]} />
+                    </InputContainer>
+                    
+                    <InputContainer
+                        label="Multi-select input"
+                        field={form.fields.select1}>
+                        <MultiSelectInput
+                            field={form.fields.select2}
+                            fieldChange={formUpdate}
+                            options={BAZ_OPTIONS} />
                     </InputContainer>
                     
                     <InputContainer
                         label="Radio group"
                         field={form.fields.radio1}>
-                        {RADIO_OPTIONS.map((option) => (
+                        {BAR_OPTIONS.map((option) => (
                             <RadioInput
                                 key={option.value}
                                 label={option.label}
@@ -194,6 +210,7 @@ const wrap = compose<React.ComponentClass<OwnProps>>(
             checkbox1: false,
             checkbox2: null,
             select1: null,
+            select2: [],
             radio1: null,
         }
     }),

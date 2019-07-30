@@ -13,23 +13,6 @@ export function ErrorMessage({ error }: ErrorMessageProps) {
     return <span className="error">{error.error}</span>
 }
 
-// This type can be used when we need to round-trip a value through a DOM prop.
-// Complex types can provide an id property.
-export type RoundTripValue = { id: string } | string | number | null | undefined;
-
-function stringValue(value: RoundTripValue): string {
-    if (value === null) {
-        return "__NULL__";
-    }
-    if (value === undefined) {
-        return "__UNDEFINED__";
-    }
-    if (typeof value === "object") {
-        return value.id;
-    }
-    return value.toString();
-}
-
 const classString: (...parts: (string | null | undefined | false)[]) => string =
     function () {
         let str = "";
@@ -99,37 +82,79 @@ export function TextInput({ className, field, fieldChange }: TextInputProps) {
 // Select
 //
 
+function getOptionValue(options: SelectInputOption[], optionId: string): string {
+    const index = parseInt(optionId, 10);
+    const option = options[index]
+    return option ? option.value : null;
+}
+
+function getOptionId(options: SelectInputOption[], optionValue: any): string {
+    const index = options.findIndex(o => o.value === optionValue);
+    return index.toString();
+}
+
 export interface SelectInputOption {
     label: React.ReactNode;
-    value: RoundTripValue;
+    value: any;
 }
 
 export interface SelectInputProps {
     className?: string;
-    field: Field<RoundTripValue>;
-    fieldChange: (value: FieldUpdate<any, RoundTripValue>) => void;
+    field: Field;
+    fieldChange: (value: FieldUpdate) => void;
     options: SelectInputOption[];
 }
 export function SelectInput({ className, field, fieldChange, options }: SelectInputProps) {
-    function mapToTypedValue(selectedValue: string) {
-        for (const option of options) {
-            if (selectedValue === stringValue(option.value)) {
-                return option.value;
-            }
-        }
-        return null;
-    }
     return (
         <select
             className={classString("input--select", className)}
             name={field.name}
-            value={stringValue(field.value)}
+            value={getOptionId(options, field.value)}
             disabled={field.meta.disabled}
             onFocus={() => fieldChange({ name: field.name, focused: true })}
             onBlur={() => fieldChange({ name: field.name, visited: true, focused: false })}
-            onChange={e => fieldChange({ name: field.name, value: mapToTypedValue(e.target.value), touched: true })}>
-            {options.map(option => (
-                <option className={className} value={stringValue(option.value)}>{option.label}</option>
+            onChange={e => fieldChange({ name: field.name, value: getOptionValue(options, e.target.value), touched: true })}>
+            {options.map((option, id) => (
+                <option key={id} className={className} value={getOptionId(options, option.value)}>{option.label}</option>
+            ))}
+        </select>
+    );
+}
+
+//
+// Multi-select
+//
+
+function getSelectedValues(options: SelectInputOption[], selectedOptions: HTMLCollectionOf<HTMLOptionElement>): any[] {
+    const values = [];
+    for (let i = 0; i < selectedOptions.length; i++) {
+        const item = selectedOptions.item(i);
+        if (item) {
+            values.push(getOptionValue(options, item.value));
+        }
+    }
+    return values;
+}
+
+export interface MultiSelectInputProps {
+    className?: string;
+    field: Field<any[]>;
+    fieldChange: (value: FieldUpdate<any, any[]>) => void;
+    options: SelectInputOption[];
+}
+export function MultiSelectInput({ className, field, fieldChange, options }: MultiSelectInputProps) {
+    return (
+        <select
+            className={classString("input--multi-select", className)}
+            name={field.name}
+            value={field.value.map(v => getOptionId(options, v))}
+            disabled={field.meta.disabled}
+            multiple={true}
+            onFocus={() => fieldChange({ name: field.name, focused: true })}
+            onBlur={() => fieldChange({ name: field.name, visited: true, focused: false })}
+            onChange={e => fieldChange({ name: field.name, value: getSelectedValues(options, e.target.selectedOptions), touched: true })}>
+            {options.map((option, id) => (
+                <option key={id} className={className} value={getOptionId(options, option.value)}>{option.label}</option>
             ))}
         </select>
     );
