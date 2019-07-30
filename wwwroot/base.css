@@ -19,14 +19,14 @@ div.form-field {
     margin-bottom: 20px;
     display: block;
 }
-div.form-field label {
+div.form-field label.form-field--label {
     font-weight: bold;
     display: block;
 }
 
-div.form-field--disabled label { text-decoration: line-through; }
+div.form-field--disabled .form-field--label { text-decoration: line-through; }
 div.form-field--touched {}
-div.form-field--focused label { text-decoration: underline; }
+div.form-field--focused .form-field--label { text-decoration: underline; }
 div.form-field--dirty {}
 div.form-field--pristine {}
 

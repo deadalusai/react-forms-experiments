@@ -6,39 +6,56 @@ import { RootState } from "store";
 import { Form, FieldUpdate, FormComponentProps, withStoreBackedForm } from "forms";
 import * as Validators from "forms/validators";
 import { keysOf } from "forms/core";
-import { TextInput, SelectInput, Option } from "components/forms";
-// import SubFormView, { SubForm } from "./subform";
+import { TextInput, SelectInput, SelectOption, RadioInputGroup, RadioInput } from "components/forms";
 
 const FORM_NAME = "my-form";
+
+enum FooType { foo1, foo2, foo3 };
+enum BarType { bar1 = "first", bar2 = "second", bar3 = "third" };
+
 interface MyForm {
-    field1: string;
-    field2: string;
-    field3: number | null;
-    // field4: SubForm;
+    text1: string;
+    text2: string;
+    checkbox1: boolean;
+    select1: FooType | null;
+    radio1: BarType | null;
 }
 
+const SELECT_OPTIONS = [
+    { label: "Foo one", value: FooType.foo1 },
+    { label: "Foo two", value: FooType.foo2 },
+    { label: "Foo three", value: FooType.foo3 },
+];
+
+const RADIO_OPTIONS = [
+    { label: "Bar one", value: BarType.bar1 },
+    { label: "Bar two", value: BarType.bar2 },
+    { label: "Bar three", value: BarType.bar3 },
+];
+
 // Building a form validation routine using validator composition
-const fieldValidator = Validators.createFormValidator<MyForm>({
-    field1: Validators.combine(
+const formFieldValidator = Validators.createFormValidator<MyForm>({
+    text1: Validators.combine(
         Validators.required(),
         Validators.pattern(/hello/i, "ERROR.MUST_CONTAIN_HELLO"),
     ),
-    field2: Validators.combine(
+    text2: Validators.combine(
         Validators.required(),
     ),
-    field3: Validators.combine(
+    select1: Validators.combine(
         Validators.required(),
         Validators.greaterThan(1),
         value => (value == 3) ? { error: "ERROR.THREE_NOT_ALLOWED", params: { value } } : null,
     ),
+    radio1: Validators.required(),
 });
 
 // Building a form validation routine manually
 const formValidator = (form: MyForm) => {
-    const errors = fieldValidator(form);
+    const errors = formFieldValidator(form);
     // Cross-field validation example
-    if (!errors.field2 && form.field1 != form.field2) {
-        errors.field2 = { error: "ERROR.FIELD1_FIELD2_MUST_MATCH" };
+    if (!errors.text2 && form.text1 != form.text2) {
+        errors.text2 = { error: "ERROR.FIELD1_FIELD2_MUST_MATCH" };
     }
     return errors;
 };
@@ -54,38 +71,44 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
     public render() {
         const { form } = this.props;
         const onFieldChange = (change: FieldUpdate) => this.props.formUpdateField(change);
-        const options = [
-            { label: "Option one", value: 1 },
-            { label: "Option two", value: 2 },
-            { label: "Option three", value: 3 },
-        ];
         return (
             <section>
                 <form onSubmit={(e) => { e.preventDefault(); this.submit(form); }}>
                     <div>
                         <TextInput
-                            label="Field one"
-                            field={form.fields.field1}
+                            label="Text input 1"
+                            field={form.fields.text1}
                             fieldChange={onFieldChange} />
                     </div>
                     <div>
                         <TextInput
-                            label="Field two"
-                            field={form.fields.field2}
+                            label="Text input 2"
+                            field={form.fields.text2}
                             fieldChange={onFieldChange} />
                     </div>
                     <div>
                         <SelectInput
-                            label="Field three"
-                            field={form.fields.field3}
+                            label="Select input"
+                            field={form.fields.select1}
                             fieldChange={onFieldChange}>
-                            <Option label="NO SELECTION" value={null} />
-                            {options.map((o, i) => <Option key={i} {...o} />)}
+                            <SelectOption label="-- Please Select --" value={null} />
+                            {SELECT_OPTIONS.map((option) => <SelectOption key={option.value} {...option} />)}
                         </SelectInput>
                     </div>
-                    {/* <SubFormView
-                        value={form.fields.field4.value}
-                        valueChange={value => onFieldChange({ name: "field4", value, touched: true })} /> */}
+                    <div>
+                        <RadioInputGroup
+                            label="Radio group"
+                            field={form.fields.radio1}>
+                            {RADIO_OPTIONS.map((option) => (
+                                <RadioInput
+                                    key={option.value}
+                                    field={form.fields.radio1}
+                                    fieldChange={onFieldChange}
+                                    label={option.label}
+                                    value={option.value} />
+                            ))}
+                        </RadioInputGroup>
+                    </div>
                     <div>
                         <button type="submit">Submit</button>
                         <button type="button" onClick={() => this.reset(form)}>Reset</button>
@@ -133,17 +156,15 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
 }
 
 const wrap = compose<React.ComponentClass<OwnProps>>(
-    withStoreBackedForm<MyForm>({
+    withStoreBackedForm<OwnProps, MyForm>({
         name: FORM_NAME,
         validator: formValidator,
         initial: {
-            field1: "",
-            field2: "",
-            field3: null,
-            // field4: {
-            //     sub1: "",
-            //     sub2: "",
-            // }
+            text1: "",
+            text2: "",
+            select1: null,
+            radio1: null,
+            checkbox1: false,
         }
     }),
     connect<StateProps, ActionProps, OwnProps, RootState>(

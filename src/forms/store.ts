@@ -42,12 +42,8 @@ export function reducer(state: FormsState | undefined, action: ActionsFrom<typeo
     if (!state) {
         return initialState;
     }
-    switch (action.type) {
-        case FORMS_UPDATE_FORM:
-            return updateFormReducer(state, action);
-        // NOTE: this check doesn't work if there's only one action in the union type.
-        // default:
-        //     assertNever(action);
+    if (action.type === FORMS_UPDATE_FORM) {
+        return updateFormReducer(state, action);
     }
     return state;
 }

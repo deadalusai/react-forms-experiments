@@ -30,26 +30,26 @@ export function required(error = "ERROR.REQUIRED"): FieldValidator {
     return value => value === null || value === undefined || value === "" ? { error, params: { value } } : null;
 }
 
-export function number(error = "ERROR.NOT_A_NUMBER"): FieldValidator {
+export function number(error = "ERROR.MUST_BE_A_NUMBER"): FieldValidator {
     return value => isNaN(value) ? { error, params: { value } } : null;
 }
 
-export function lessThanOrEqual(n: number, error = "ERROR.NOT_LESS_THAN_OR_EQUAL"): FieldValidator {
+export function lessThanOrEqual(n: number, error = "ERROR.MUST_BE_LESS_THAN_OR_EQUAL"): FieldValidator {
     return value => typeof value === "number" && value > n ? { error, params: { n, value } } : null;
 }
 
-export function lessThan(n: number, error = "ERROR.NOT_LESS_THAN"): FieldValidator {
+export function lessThan(n: number, error = "ERROR.MUST_BE_LESS_THAN"): FieldValidator {
     return value => typeof value === "number" && value >= n ? { error, params: { n, value } } : null;
 }
 
-export function greaterThanOrEqual(n: number, error = "ERROR.NOT_GREATER_THAN_OR_EQUAL"): FieldValidator {
+export function greaterThanOrEqual(n: number, error = "ERROR.MUST_BE_GREATER_THAN_OR_EQUAL"): FieldValidator {
     return value => typeof value === "number" && value < n ? { error, params: { n, value } } : null;
 }
 
-export function greaterThan(n: number, error = "ERROR.NOT_GREATER_THAN"): FieldValidator {
+export function greaterThan(n: number, error = "ERROR.MUST_BE_GREATER_THAN"): FieldValidator {
     return value => typeof value === "number" && value <= n ? { error, params: { n, value } } : null;
 }
 
-export function pattern(p: RegExp, error = "ERROR.PATTERN_NOT_MATCHED"): FieldValidator {
+export function pattern(p: RegExp, error = "ERROR.MUST_MATCH_PATTERN"): FieldValidator {
     return value => (typeof value === "string") && !p.test(value) ? { error, params: { value } } : null;
 }

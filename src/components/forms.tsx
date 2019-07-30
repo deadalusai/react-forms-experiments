@@ -2,6 +2,10 @@ import * as React from "react";
 
 import { FieldError, Field, FieldUpdate, FieldMeta } from "forms";
 
+//
+// Utility components and functions
+//
+
 export interface ErrorMessageProps {
     error: FieldError;
 }
@@ -31,6 +35,24 @@ function fieldClassName(meta: FieldMeta) {
         (meta.dirty ? " form-field--dirty" : " form-field--pristine");
 }
 
+// This type can be used when we need to round-trip a value through a DOM prop.
+// Complex types can provide an id property.
+export type RoundTripValue = string | number | { id: string } | null;
+
+function stringValue(value: RoundTripValue): string {
+    if (value === null) {
+        return "__NULL__";
+    }
+    if (typeof value === "object") {
+        return value.id;
+    }
+    return value.toString();
+}
+
+//
+// Text Input
+//
+
 export interface TextInputProps {
     label?: React.ReactNode;
     field: Field<string | null>;
@@ -41,7 +63,7 @@ export function TextInput({ label, field, fieldChange }: TextInputProps) {
     const { name } = field;
     return (
         <div className={fieldClassName(field.meta)}>
-            <label htmlFor={field.name}>
+            <label className="form-field--label" htmlFor={field.name}>
                 {label || field.name}
             </label>
             <input
@@ -52,31 +74,20 @@ export function TextInput({ label, field, fieldChange }: TextInputProps) {
                 onFocus={() => fieldChange({ name, focused: true })}
                 onBlur={() => fieldChange({ name, visited: true, focused: false, })}
                 onChange={e => fieldChange({ name, value: e.target.value, touched: true })} />
-            {!disabled && field.value && <ClearButton onClick={() => fieldChange({ name, value: "", touched: true })} />}
             {(touched || visited) && error && <ErrorMessage error={error} />}
         </div>
     );
 }
 
-// We need to smuggle the option value through the string prop on the DOM.
-// Complex types can provide an id property.
-export type SelectOptionValue = string | number | { id: string } | null;
-
-function stringValue(value: SelectOptionValue): string {
-    if (value === null) {
-        return "__NULL__";
-    }
-    if (typeof value === "object") {
-        return value.id;
-    }
-    return value.toString();
-}
+//
+// Select
+//
 
 export interface SelectInputProps {
     label?: React.ReactNode;
-    field: Field<SelectOptionValue>;
-    fieldChange: (value: FieldUpdate<any, SelectOptionValue>) => void;
-    children: (React.ReactElement<OptionProps> | React.ReactElement<OptionProps>[])[];
+    field: Field<RoundTripValue>;
+    fieldChange: (value: FieldUpdate<any, RoundTripValue>) => void;
+    children: (React.ReactElement<SelectOptionProps> | React.ReactElement<SelectOptionProps>[])[];
 }
 export function SelectInput({ label, field, fieldChange, children }: SelectInputProps) {
     function mapToTypedValue(selectedValue: string) {
@@ -94,7 +105,7 @@ export function SelectInput({ label, field, fieldChange, children }: SelectInput
     const { name } = field;
     return (
         <div className={fieldClassName(field.meta)}>
-            <label htmlFor={field.name}>
+            <label className="form-field--label" htmlFor={field.name}>
                 {label || field.name}
             </label>
             <select
@@ -106,16 +117,67 @@ export function SelectInput({ label, field, fieldChange, children }: SelectInput
                 onChange={e => fieldChange({ name, value: mapToTypedValue(e.target.value), touched: true })}>
                 {children}
             </select>
-            {!disabled && field.value && <ClearButton onClick={() => fieldChange({ name, value: null, touched: true })} />}
             {(touched || visited) && error && <ErrorMessage error={error} />}
         </div>
     );
 }
 
-export interface OptionProps {
+export interface SelectOptionProps {
     label: React.ReactNode;
-    value: SelectOptionValue;
+    value: RoundTripValue;
 }
-export function Option({ label, value }: OptionProps) {
+export function SelectOption({ label, value }: SelectOptionProps) {
     return <option value={stringValue(value)}>{label}</option>;
 }
+
+//
+// Radio
+//
+
+export interface RadioInputGroupProps {
+    label?: React.ReactNode;
+    field: Field<RoundTripValue>;
+    children: React.ReactElement<SelectOptionProps>[];
+}
+export function RadioInputGroup({ label, field, children }: RadioInputGroupProps) {
+    const { touched, visited, error } = field.meta;
+    return (
+        <div className={fieldClassName(field.meta)}>
+            <label className="form-field--label" htmlFor={field.name}>
+                {label || field.name}
+            </label>
+            <div className="radio-group">
+                {children}
+            </div>
+            {(touched || visited) && error && <ErrorMessage error={error} />}
+        </div>
+    );
+}
+
+export interface RadioInputProps {
+    label?: React.ReactNode;
+    value: any;
+    field: Field<any>;
+    fieldChange: (value: FieldUpdate<any, any>) => void;
+}
+export function RadioInput({ label, value, field, fieldChange }: RadioInputProps) {
+    return (
+        <label className="radio-item">
+            <input
+                type="radio"
+                name={field.name}
+                disabled={field.meta.disabled}
+                checked={value === field.value}
+                onFocus={() => fieldChange({ name: field.name, focused: true })}
+                onBlur={() => fieldChange({ name: field.name, visited: true, focused: false })}
+                onChange={() => fieldChange({ name: field.name, value, touched: true })} />
+            <span>
+                {label || field.name}
+            </span>
+        </label>
+    );
+}
+
+//
+// Checkbox
+//
