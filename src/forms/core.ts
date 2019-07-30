@@ -202,7 +202,7 @@ export interface FormUpdate {
  * @param form The form to update.
  * @param update The update to apply.
  */
-export function formUpdateAllFields<TForm>(form: Form<TForm>, update: FormUpdate): Form<TForm> {
+export function formUpdate<TForm>(form: Form<TForm>, update: FormUpdate): Form<TForm> {
     // Touch all fields in the form
     const fields: Partial<FormFields<TForm>> = {};
     for (const name of keysOf(form.fields)) {

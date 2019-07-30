@@ -2,18 +2,12 @@ import * as React from "react";
 import { connect } from "react-redux";
 
 import * as FormsStore from "forms/store";
-import { Form, FormUpdate, FieldUpdate, FormValidator, formInit, formUpdateField, formUpdateAllFields, formUpdateErrors } from "forms/core";
-
-interface StoreProps<TForm = any> {
-    form: Form<TForm>;
-}
+import { Form, FormUpdate, FieldUpdate, FormValidator, formInit, formUpdateField, formUpdate, formUpdateErrors } from "forms/core";
 
 export interface FormComponentProps<TForm = any> {
     form: Form<TForm>;
     formInit: (initial: TForm) => Form<TForm>;
-    formUpdateField: (update: FieldUpdate<TForm>) => Form<TForm>;
-    formUpdateAllFields: (update: FormUpdate) => Form<TForm>;
-    
+    formUpdate: (update: FormUpdate | FieldUpdate<TForm>) => Form<TForm>;
 }
 
 export interface FormOptions<TForm> {
@@ -44,24 +38,23 @@ function lift<TForm, TOwnProps>(
                 setState(form);
                 return form;
             },
-            formUpdateField: (update) => {
+            formUpdate: (update) => {
                 if (!form) {
-                    throw new Error("Called formUpdateField before formInit");
+                    throw new Error("Called formUpdate before formInit");
                 }
-                form = formUpdateField<TForm>(form, update);
-                // Apply validation only when the form is being updated with new data.
-                if (options.validator && "value" in update) {
-                    const errors = options.validator(form.current);
-                    form = formUpdateErrors(form, errors);
+                if ("name" in update) {
+                    // Field update
+                    form = formUpdateField(form, update);
+                    // Apply validation only when the form is being updated with new data.
+                    if ("value" in update && options.validator) {
+                        const errors = options.validator(form.current);
+                        form = formUpdateErrors(form, errors);
+                    }
                 }
-                setState(form);
-                return form;
-            },
-            formUpdateAllFields: (update) => {
-                if (!form) {
-                    throw new Error("Called formTouch before formInit");
+                else {
+                    // Form-wide update
+                    form = formUpdate(form, update);
                 }
-                form = formUpdateAllFields(form, update);
                 setState(form);
                 return form;
             },
@@ -76,7 +69,7 @@ function lift<TForm, TOwnProps>(
  * 
  * @param options Configuration options for the form.
  */
-export function withStateBackedForm<TOwnProps = {}, TForm = any>(options: FormOptions<TForm>) {
+export function injectStateBackedForm<TForm = any, TOwnProps = {}>(options: FormOptions<TForm>) {
     return (WrappedComponent: React.ComponentClass<TOwnProps & FormComponentProps<TForm>>) => {
         return lift(WrappedComponent, React.useState, options);
     };
@@ -87,12 +80,15 @@ export function withStateBackedForm<TOwnProps = {}, TForm = any>(options: FormOp
  * 
  * @param options Configuration options for the form.
  */
-export function withStoreBackedForm<TOwnProps = {}, TForm = any>(options: FormOptions<TForm>) {
+export function injectStoreBackedForm<TForm = any, TOwnProps = {}>(options: FormOptions<TForm>) {
     return (WrappedComponent: React.ComponentClass<TOwnProps & FormComponentProps<TForm>>) => {
         // Mock the `useState` API to be backed by the redux store
         let state: Form<TForm>;
         let setState: (newState: Form<TForm>) => void;
-        const connector = connect<StoreProps<TForm>, any, TOwnProps, any>(
+        interface StoreProps {
+            form: Form<TForm>;
+        }
+        const connector = connect<StoreProps, any, TOwnProps, any>(
             (rootState) => {
                 state = rootState["forms"][options.name];
                 return { form: state };

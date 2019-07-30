@@ -12,6 +12,6 @@ export {
 } from "forms/core"
 export {
     FormComponentProps,
-    withStoreBackedForm,
-    withStateBackedForm
-} from "forms/components";
+    injectStoreBackedForm,
+    injectStateBackedForm
+} from "forms/component";

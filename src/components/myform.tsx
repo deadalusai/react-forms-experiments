@@ -3,10 +3,10 @@ import { connect } from "react-redux";
 import { compose } from "redux";
 
 import { RootState } from "store";
-import { Form, FieldUpdate, FormComponentProps, withStoreBackedForm } from "forms";
+import { Form, FormComponentProps, injectStoreBackedForm } from "forms";
 import * as Validators from "forms/validators";
 import { keysOf } from "forms/core";
-import { InputContainer, TextInput, SelectInput, SelectOption, RadioInput, CheckboxInput } from "components/forms";
+import { InputContainer, TextInput, SelectInput, SelectOption, RadioInput, CheckboxInput } from "forms/inputs";
 
 const FORM_NAME = "my-form";
 
@@ -79,8 +79,7 @@ export type MyFormViewProps = StateProps & ActionProps & OwnProps;
 export class MyFormView extends React.Component<MyFormViewProps & FormComponentProps<MyForm>> {
 
     public render() {
-        const { form } = this.props;
-        const onFieldChange = (change: FieldUpdate) => this.props.formUpdateField(change);
+        const { form, formUpdate } = this.props;
         return (
             <section>
                 <form onSubmit={(e) => { e.preventDefault(); this.submit(form); }}>
@@ -89,7 +88,7 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                         field={form.fields.text1}>
                         <TextInput
                             field={form.fields.text1}
-                            fieldChange={onFieldChange} />
+                            fieldChange={formUpdate} />
                     </InputContainer>
 
                     <InputContainer
@@ -97,7 +96,7 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                         field={form.fields.text2}>
                         <TextInput
                             field={form.fields.text2}
-                            fieldChange={onFieldChange} />
+                            fieldChange={formUpdate} />
                     </InputContainer>
                     
                     <InputContainer
@@ -106,7 +105,7 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                         <CheckboxInput
                             label="Checkbox-sepecific label"
                             field={form.fields.checkbox1}
-                            fieldChange={onFieldChange} />
+                            fieldChange={formUpdate} />
                     </InputContainer>
                     
                     <InputContainer
@@ -118,7 +117,7 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                                 label={option.label}
                                 values={{ checked: option.value, unchecked: null }}
                                 field={form.fields.checkbox2}
-                                fieldChange={onFieldChange} />
+                                fieldChange={formUpdate} />
                         ))}
                     </InputContainer>
                     
@@ -127,7 +126,7 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                         field={form.fields.select1}>
                         <SelectInput
                             field={form.fields.select1}
-                            fieldChange={onFieldChange}>
+                            fieldChange={formUpdate}>
                             <SelectOption label="-- Please Select --" value={null} />
                             {SELECT_OPTIONS.map((option) => (
                                 <SelectOption 
@@ -147,7 +146,7 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                                 label={option.label}
                                 value={option.value}
                                 field={form.fields.radio1}
-                                fieldChange={onFieldChange} />
+                                fieldChange={formUpdate} />
                         ))}
                     </InputContainer>
                     
@@ -160,23 +159,17 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                     {keysOf(form.fields).map(name => {
                         const { meta } = form.fields[name];
                         return (
-                            <button key={name} type="button" onClick={() => this.props.formUpdateField({ name, disabled: !meta.disabled })}>
+                            <button key={name} type="button" onClick={() => formUpdate({ name, disabled: !meta.disabled })}>
                                 {meta.disabled ? "Enable" : "Disable"} {name}
                             </button>
                         );
                     })}
-                    <button key={name} type="button" onClick={() => this.props.formUpdateAllFields({ disabled: !form.meta.disabled })}>
+                    <button key={name} type="button" onClick={() => formUpdate({ disabled: !form.meta.disabled })}>
                         {form.meta.disabled ? "Enable" : "Disable"} all fields
                     </button>
                 </section>
                 <pre>
-                    initial: {JSON.stringify(form.initial, null, 4)}
-                </pre>
-                <pre>
-                    data: {JSON.stringify(form.current, null, 4)}
-                </pre>
-                <pre>
-                    meta: {JSON.stringify({ meta: form.meta, fields: form.fields }, null, 4)}
+                    form: {JSON.stringify(form, null, 4)}
                 </pre>
             </section>
         );
@@ -184,7 +177,7 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
 
     public submit(form: Form<MyForm>) {
         if (!form.meta.valid) {
-            this.props.formUpdateAllFields({ touched: true });
+            this.props.formUpdate({ touched: true });
             return;
         }
         const json = JSON.stringify(form.current, null, 4);
@@ -198,7 +191,7 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
 }
 
 const wrap = compose<React.ComponentClass<OwnProps>>(
-    withStoreBackedForm<OwnProps, MyForm>({
+    injectStoreBackedForm<MyForm, OwnProps>({
         name: FORM_NAME,
         validator: formValidator,
         initial: {
