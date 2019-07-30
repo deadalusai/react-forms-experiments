@@ -6,7 +6,7 @@ import { RootState } from "store";
 import { Form, FormComponentProps, injectStoreBackedForm } from "forms";
 import * as Validators from "forms/validators";
 import { keysOf } from "forms/core";
-import { InputContainer, TextInput, SelectInput, MultiSelectInput, RadioInput, CheckboxInput, DisabledBinding } from "forms/controls";
+import { InputContainer, TextInput, SelectInput, MultiSelectInput, RadioInput, CheckboxInput } from "forms/controls";
 
 const FORM_NAME = "my-form";
 
@@ -136,11 +136,6 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                                 { label: "-- Please select --", value: null },
                                 ...FOO_OPTIONS,
                             ]} />
-                        {/* TODO: Experimenting with patterns for declarative binding of `disabled` */}
-                        <DisabledBinding
-                            field={form.fields.select1}
-                            fieldChange={formUpdate}
-                            disabled={form.current.checkbox1} />
                     </InputContainer>
                     
                     <InputContainer

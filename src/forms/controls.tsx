@@ -25,27 +25,6 @@ const classString: (...parts: (string | null | undefined | false)[]) => string =
     };
 
 //
-// Declarative binding helpers
-//
-
-export interface FormBindingProps {
-    field: Field,
-    fieldChange: (value: FieldUpdate) => void;
-    disabled: boolean;
-}
-export class DisabledBinding extends React.Component<FormBindingProps> {
-    public shouldComponentUpdate(nextProps: Readonly<FormBindingProps>) {
-        if (nextProps.disabled != this.props.disabled) {
-            this.props.fieldChange({ name: this.props.field.name, disabled: nextProps.disabled });
-        }
-        return false;
-    }
-    public render() {
-        return null;
-    }
-}
-
-//
 // Input container
 //
 
