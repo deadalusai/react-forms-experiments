@@ -5,7 +5,7 @@ import { Field, reduxForm, InjectedFormProps, FormErrors, WrappedFieldProps, for
 
 import { RootState } from "store";
 import { FieldError } from "forms";
-import { ErrorMessage, WarningMessage } from "components/forms";
+import { ErrorMessage } from "components/forms";
 
 const FORM_NAME = "redux-form";
 interface TestFormData {
@@ -127,7 +127,7 @@ function TextInput(props: TextInputProps) {
             {touched && error &&
                 <ErrorMessage error={error} />}
             {touched && warning &&
-                <WarningMessage error={warning} />}
+                <ErrorMessage error={warning} />}
         </label>
     );
 }

@@ -13,13 +13,6 @@ export function ErrorMessage({ error }: ErrorMessageProps) {
     return <span className="form-field-error">{error.error}</span>
 }
 
-export interface WarningMessageProps {
-    error: FieldError;
-}
-export function WarningMessage({ error }: ErrorMessageProps) {
-    return <span className="form-field-warning">{error.error}</span>
-}
-
 export interface ClearButtonProps {
     onClick: () => void;
 }
@@ -50,32 +43,45 @@ function stringValue(value: RoundTripValue): string {
 }
 
 //
-// Text Input
+// Input container
 //
 
-export interface TextInputProps {
-    label?: React.ReactNode;
-    field: Field<string | null>;
-    fieldChange: (value: FieldUpdate<any, string | null>) => void;
+export interface InputContainerProps {
+    label: React.ReactNode;
+    field: Field;
+    children: any;
 }
-export function TextInput({ label, field, fieldChange }: TextInputProps) {
-    const { touched, visited, error, disabled } = field.meta;
-    const { name } = field;
+export function InputContainer({ label, field, children }: InputContainerProps) {
+    const { touched, visited, error } = field.meta;
     return (
         <div className={fieldClassName(field.meta)}>
             <label className="form-field--label" htmlFor={field.name}>
                 {label || field.name}
             </label>
-            <input
-                name={field.name}
-                type="text"
-                disabled={disabled}
-                value={field.value === null ? "" : field.value}
-                onFocus={() => fieldChange({ name, focused: true })}
-                onBlur={() => fieldChange({ name, visited: true, focused: false, })}
-                onChange={e => fieldChange({ name, value: e.target.value, touched: true })} />
+            {children}
             {(touched || visited) && error && <ErrorMessage error={error} />}
         </div>
+    );
+}
+
+//
+// Text Input
+//
+
+export interface TextInputProps {
+    field: Field<string | null>;
+    fieldChange: (value: FieldUpdate<any, string | null>) => void;
+}
+export function TextInput({ field, fieldChange }: TextInputProps) {
+    return (
+        <input
+            name={name}
+            type="text"
+            disabled={field.meta.disabled}
+            value={field.value === null ? "" : field.value}
+            onFocus={() => fieldChange({ name: field.name, focused: true })}
+            onBlur={() => fieldChange({ name: field.name, visited: true, focused: false, })}
+            onChange={e => fieldChange({ name: field.name, value: e.target.value, touched: true })} />
     );
 }
 
@@ -84,12 +90,11 @@ export function TextInput({ label, field, fieldChange }: TextInputProps) {
 //
 
 export interface SelectInputProps {
-    label?: React.ReactNode;
     field: Field<RoundTripValue>;
     fieldChange: (value: FieldUpdate<any, RoundTripValue>) => void;
     children: (React.ReactElement<SelectOptionProps> | React.ReactElement<SelectOptionProps>[])[];
 }
-export function SelectInput({ label, field, fieldChange, children }: SelectInputProps) {
+export function SelectInput({ field, fieldChange, children }: SelectInputProps) {
     function mapToTypedValue(selectedValue: string) {
         for (const child of children) {
             const options = (child instanceof Array) ? child : [child];
@@ -101,24 +106,16 @@ export function SelectInput({ label, field, fieldChange, children }: SelectInput
         }
         return null;
     }
-    const { touched, visited, error, disabled } = field.meta;
-    const { name } = field;
     return (
-        <div className={fieldClassName(field.meta)}>
-            <label className="form-field--label" htmlFor={field.name}>
-                {label || field.name}
-            </label>
-            <select
-                name={field.name}
-                value={stringValue(field.value)}
-                disabled={disabled}
-                onFocus={() => fieldChange({ name, focused: true })}
-                onBlur={() => fieldChange({ name, visited: true, focused: false })}
-                onChange={e => fieldChange({ name, value: mapToTypedValue(e.target.value), touched: true })}>
-                {children}
-            </select>
-            {(touched || visited) && error && <ErrorMessage error={error} />}
-        </div>
+        <select
+            name={field.name}
+            value={stringValue(field.value)}
+            disabled={field.meta.disabled}
+            onFocus={() => fieldChange({ name: field.name, focused: true })}
+            onBlur={() => fieldChange({ name: field.name, visited: true, focused: false })}
+            onChange={e => fieldChange({ name: field.name, value: mapToTypedValue(e.target.value), touched: true })}>
+            {children}
+        </select>
     );
 }
 
@@ -133,26 +130,6 @@ export function SelectOption({ label, value }: SelectOptionProps) {
 //
 // Radio
 //
-
-export interface RadioInputGroupProps {
-    label?: React.ReactNode;
-    field: Field<RoundTripValue>;
-    children: React.ReactElement<SelectOptionProps>[];
-}
-export function RadioInputGroup({ label, field, children }: RadioInputGroupProps) {
-    const { touched, visited, error } = field.meta;
-    return (
-        <div className={fieldClassName(field.meta)}>
-            <label className="form-field--label" htmlFor={field.name}>
-                {label || field.name}
-            </label>
-            <div className="radio-group">
-                {children}
-            </div>
-            {(touched || visited) && error && <ErrorMessage error={error} />}
-        </div>
-    );
-}
 
 export interface RadioInputProps {
     label?: React.ReactNode;

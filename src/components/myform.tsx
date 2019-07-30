@@ -6,7 +6,7 @@ import { RootState } from "store";
 import { Form, FieldUpdate, FormComponentProps, withStoreBackedForm } from "forms";
 import * as Validators from "forms/validators";
 import { keysOf } from "forms/core";
-import { TextInput, SelectInput, SelectOption, RadioInputGroup, RadioInput, CheckboxInput } from "components/forms";
+import { InputContainer, TextInput, SelectInput, SelectOption, RadioInput, CheckboxInput } from "components/forms";
 
 const FORM_NAME = "my-form";
 
@@ -75,47 +75,57 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
         return (
             <section>
                 <form onSubmit={(e) => { e.preventDefault(); this.submit(form); }}>
-                    <div>
+                    <InputContainer
+                        label="Text input 1"
+                        field={form.fields.text1}>
                         <TextInput
-                            label="Text input 1"
                             field={form.fields.text1}
                             fieldChange={onFieldChange} />
-                    </div>
-                    <div>
+                    </InputContainer>
+
+                    <InputContainer
+                        label="Text input 2"
+                        field={form.fields.text2}>
                         <TextInput
-                            label="Text input 2"
                             field={form.fields.text2}
                             fieldChange={onFieldChange} />
-                    </div>
-                    <div>
+                    </InputContainer>
+                    
+                    <InputContainer
+                        label="Checkbox input"
+                        field={form.fields.checkbox1}>
                         <CheckboxInput
-                            label="Checkbox input"
+                            label="Checkbox-sepecific label"
                             field={form.fields.checkbox1}
                             fieldChange={onFieldChange} />
-                    </div>
-                    <div>
+                    </InputContainer>
+                    
+                    <InputContainer
+                        label="Select input"
+                        field={form.fields.select1}>
                         <SelectInput
-                            label="Select input"
                             field={form.fields.select1}
                             fieldChange={onFieldChange}>
                             <SelectOption label="-- Please Select --" value={null} />
-                            {SELECT_OPTIONS.map((option) => <SelectOption key={option.value} {...option} />)}
-                        </SelectInput>
-                    </div>
-                    <div>
-                        <RadioInputGroup
-                            label="Radio group"
-                            field={form.fields.radio1}>
-                            {RADIO_OPTIONS.map((option) => (
-                                <RadioInput
-                                    key={option.value}
-                                    label={option.label}
-                                    value={option.value}
-                                    field={form.fields.radio1}
-                                    fieldChange={onFieldChange} />
+                            {SELECT_OPTIONS.map((option) => (
+                                <SelectOption key={option.value} {...option} />
                             ))}
-                        </RadioInputGroup>
-                    </div>
+                        </SelectInput>
+                    </InputContainer>
+                    
+                    <InputContainer
+                        label="Radio group"
+                        field={form.fields.radio1}>
+                        {RADIO_OPTIONS.map((option) => (
+                            <RadioInput
+                                key={option.value}
+                                label={option.label}
+                                value={option.value}
+                                field={form.fields.radio1}
+                                fieldChange={onFieldChange} />
+                        ))}
+                    </InputContainer>
+                    
                     <div>
                         <button type="submit">Submit</button>
                         <button type="button" onClick={() => this.reset(form)}>Reset</button>
