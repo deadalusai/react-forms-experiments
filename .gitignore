@@ -1,3 +1,10 @@
+# Webhost
+webhost/bin/
+webhost/obj/
+
+# Node junk
 node_modules/
+
+# Compiled junk
 wwwroot/lib/
 wwwroot/bin/

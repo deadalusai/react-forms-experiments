@@ -25,7 +25,7 @@
     },
     "scripts": {
         "postinstall": "node copy-dependencies.js",
-        "start-webserver": "basic-http-server wwwroot",
+        "start-webserver": "dotnet run -p ./webhost/Webhost.csproj --wwwroot ../wwwroot",
         "start-tsc": "tsc --watch"
     }
 }
