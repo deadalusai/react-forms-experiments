@@ -102,7 +102,7 @@ export type FieldUpdate<TValue = any, TForm = any> = {
     focused?: boolean;
     disabled?: boolean;
     validating?: boolean;
-    error?: FieldError;
+    error?: FieldError | null;
 };
 
 /**

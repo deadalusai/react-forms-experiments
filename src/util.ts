@@ -28,7 +28,22 @@ export type ActionsFrom<T> = { [K in keyof T]: ActionReturnType<T[K]> }[keyof T]
  *         case "action3": return action1Reducer(state, action);
  *         default: assertNever(action);
  *     }
- * 
+ *
  * @param _never Any value which should resolve to type `never`.
  */
 export function assertNever(_never: never) {}
+
+
+export function debounce<Fn extends Function>(ms: number, fn: Fn): Fn {
+    let timeoutId: any;
+    return <any> ((...args: any[]) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn.apply(args), ms);
+    });
+}
+
+export function delayMs(ms: number): Promise<void> {
+    return new Promise<void>((resolve, _reject) => {
+        setTimeout(() => resolve(), ms);
+    });
+}

@@ -23,19 +23,10 @@ namespace webhost
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
-            else
-            {
-                app.UseExceptionHandler("/Error");
-            }
-
             var wwwroot = _configuration["wwwroot"];
             if (wwwroot == null)
             {
-                throw new InvalidOperationException("No wwwroot argument provided");
+                throw new InvalidOperationException("No wwwroot configuration provided");
             }
 
             app.UseFileServer(new FileServerOptions {

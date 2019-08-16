@@ -1,25 +1,38 @@
-import { FieldValidator, FormErrors, FieldError, keysOf } from "forms/core";
+import { FieldValidator, FormErrors, keysOf } from "forms/core";
 
 export type FieldValidatorMap<TForm = any> = {
-    [TKey in keyof TForm]?: FieldValidator<TForm[TKey]>;
+    [TKey in keyof TForm]?: FieldValidator<TForm[TKey]> | FieldValidator<TForm[TKey]>[];
 };
 
 export function createFormValidator<TForm>(fieldValidators: FieldValidatorMap<TForm>): (form: TForm) => FormErrors<TForm> {
     return (form: TForm) => {
         const errors: FormErrors<TForm> = {};
         for (const key of keysOf(form)) {
-            const validator = fieldValidators[key];
-            const error = validator && validator(form[key]);
-            if (error) {
-                errors[key] = error;
+            let validator = fieldValidators[key];
+            if (validator) {
+                if (validator instanceof Array) {
+                    validator = combineValidators(validator);
+                }
+                const error = validator(form[key]);
+                if (error) {
+                    errors[key] = error;
+                }
             }
         }
         return errors;
     };
 }
 
-export function combine<TValue>(...validators: FieldValidator<TValue>[]): FieldValidator<TValue> {
-    return value => validators.reduce((error, validator) => error || validator(value), null as FieldError | null);
+export function combineValidators<TValue>(validators: FieldValidator<TValue>[]): FieldValidator<TValue> {
+    return value => {
+        for (const validator of validators) {
+            const error = validator(value);
+            if (error) {
+                return error;
+            }
+        }
+        return null;
+    };
 }
 
 //
@@ -27,7 +40,7 @@ export function combine<TValue>(...validators: FieldValidator<TValue>[]): FieldV
 //
 
 export function required(error = "ERROR.REQUIRED"): FieldValidator {
-    return value => !value ? { error, params: { value } } : null;
+    return value => value === null || value === undefined || value === "" ? { error, params: { value } } : null;
 }
 
 export function number(error = "ERROR.MUST_BE_A_NUMBER"): FieldValidator {

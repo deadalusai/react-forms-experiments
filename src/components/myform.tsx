@@ -2,10 +2,11 @@ import * as React from "react";
 import { connect } from "react-redux";
 import { compose } from "redux";
 
+import { delayMs } from "util";
 import { RootState } from "store";
 import { Form, FormComponentProps, injectStoreBackedForm } from "forms";
 import * as Validators from "forms/validators";
-import { keysOf } from "forms/core";
+import { keysOf, FieldError } from "forms/core";
 import { InputContainer, TextInput, SelectInput, MultiSelectInput, RadioInput, CheckboxInput } from "forms/controls";
 
 const FORM_NAME = "my-form";
@@ -44,24 +45,24 @@ const BAR_OPTIONS = [
 
 // Building a form validation routine using validator composition
 const formFieldValidator = Validators.createFormValidator<MyForm>({
-    text1: Validators.combine(
+    text1: [
         Validators.required(),
         Validators.pattern(/hello/i, "ERROR.MUST_CONTAIN_HELLO"),
-    ),
-    text2: Validators.combine(
+    ],
+    text2: [
         Validators.required(),
-    ),
+    ],
     checkbox1: Validators.required(),
     checkbox2: Validators.required(),
-    select1: Validators.combine(
+    select1: [
         Validators.required(),
         Validators.greaterThan(1),
         value => (value == 3) ? { error: "ERROR.THREE_NOT_ALLOWED", params: { value } } : null,
-    ),
-    select2: Validators.combine(
+    ],
+    select2: [
         value => value.length === 0 ? { error: "ERROR.REQUIRED" } : null,
         value => value.length > 2 ? { error: "ERROR.SELECT_AT_MOST_TWO_OPTIONS" } : null,
-    ),
+    ],
     radio1: Validators.required(),
 });
 
@@ -75,13 +76,22 @@ const formValidator = (form: MyForm) => {
     return errors;
 };
 
+const asyncStringLengthValidator = async (value: string): Promise<FieldError | null> => {
+    // Fake a delay
+    await delayMs(2000);
+    const expected = 8;
+    return (value.length < expected)
+        ? { error: "ERROR.TEXT_LENGTH_LESS_THAN_ASYNC", params: { value, expected } }
+        : null;
+};
+
 export interface StateProps {}
 export interface ActionProps {}
 export interface OwnProps {}
 
-export type MyFormViewProps = StateProps & ActionProps & OwnProps;
+export type MyFormViewProps = StateProps & ActionProps & OwnProps & FormComponentProps<MyForm>;
 
-export class MyFormView extends React.Component<MyFormViewProps & FormComponentProps<MyForm>> {
+export class MyFormView extends React.Component<MyFormViewProps> {
 
     public render() {
         const { form, formUpdate } = this.props;
@@ -93,7 +103,8 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                         field={form.fields.text1}>
                         <TextInput
                             field={form.fields.text1}
-                            fieldUpdate={formUpdate} />
+                            fieldUpdate={formUpdate}
+                            onBlur={() => this.startText1Validation()} />
                     </InputContainer>
 
                     <InputContainer
@@ -161,8 +172,13 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                     </InputContainer>
 
                     <div>
-                        <button type="submit">Submit</button>
-                        <button type="button" onClick={() => this.reset(form)}>Reset</button>
+                        <button type="submit">
+                            Submit
+                            {form.meta.validating && " ⏳"}
+                        </button>
+                        <button type="button" onClick={() => this.reset(form)}>
+                            Reset
+                        </button>
                     </div>
                 </form>
                 <section>
@@ -174,7 +190,7 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                             </button>
                         );
                     })}
-                    <button key={name} type="button" onClick={() => formUpdate({ disabled: !form.meta.disabled })}>
+                    <button type="button" onClick={() => formUpdate({ disabled: !form.meta.disabled })}>
                         all fields {form.meta.disabled ? "enable" : "disable"}
                     </button>
                 </section>
@@ -187,7 +203,7 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                             </button>
                         );
                     })}
-                    <button key={name} type="button" onClick={() => formUpdate({ validating: !form.meta.validating })}>
+                    <button type="button" onClick={() => formUpdate({ validating: !form.meta.validating })}>
                         all fields {form.meta.validating ? "normal" : "validating"}
                     </button>
                 </section>
@@ -198,8 +214,31 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
         );
     }
 
+    private text1ValidationVersion = 0;
+    public async startText1Validation() {
+        let text1 = this.props.form.fields.text1;
+        const { name, value } = text1;
+        // Skip async validation until we're locally valid
+        if (text1.meta.error) {
+            return;
+        }
+        this.text1ValidationVersion += 1;
+        const version = this.text1ValidationVersion;
+        this.props.formUpdate({ name, validating: true });
+        let error = await asyncStringLengthValidator(value);
+        // HACK: Ensure we get only the *latest* validation result
+        if (version != this.text1ValidationVersion) {
+            return;
+        }
+        // Local validation state may have changed since the async validator started.
+        // Don't overwrite it!
+        text1 = this.props.form.fields.text1;
+        error = text1.meta.error || error;
+        this.props.formUpdate({ name, validating: false, error });
+    }
+
     public submit(form: Form<MyForm>) {
-        if (!form.meta.valid) {
+        if (!form.meta.valid || form.meta.validating) {
             this.props.formUpdate({ touched: true });
             return;
         }
