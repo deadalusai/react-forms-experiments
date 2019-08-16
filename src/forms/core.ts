@@ -102,6 +102,7 @@ export type FieldUpdate<TValue = any, TForm = any> = {
     focused?: boolean;
     disabled?: boolean;
     validating?: boolean;
+    error?: FieldError;
 };
 
 /**
@@ -120,6 +121,7 @@ export function formUpdateFields<TForm>(form: Form<TForm>, updates: FieldUpdate<
             continue;
         }
         const value = "value" in update ? update.value! : field.value;
+        const error = "error" in update ? update.error! : field.meta.error;
         // Calculate new field meta
         const meta: FieldMeta = {
             ...field.meta,
@@ -129,6 +131,8 @@ export function formUpdateFields<TForm>(form: Form<TForm>, updates: FieldUpdate<
             disabled: "disabled" in update ? update.disabled! : field.meta.disabled,
             validating: "validating" in update ? update.validating! : field.meta.validating,
             dirty: value != form.initial[name],
+            valid: !error,
+            error,
         };
         newValues[name] = value;
         newFields[name] = { name, value, meta };
@@ -136,12 +140,12 @@ export function formUpdateFields<TForm>(form: Form<TForm>, updates: FieldUpdate<
     // Calculate new form meta
     const metaFor = (fieldName: keyof TForm) => ((newFields[fieldName] as any) || form.fields[fieldName]).meta;
     const names = keysOf(form.fields);
-    const formMeta = {
-        ...form.meta,
+    const formMeta: FormMeta = {
         touched: names.reduce((touched, name) => touched || metaFor(name).touched, false),
         dirty: names.reduce((dirty, name) => dirty || metaFor(name).dirty, false),
         disabled: names.reduce((disabled, name) => disabled && metaFor(name).disabled, true),
         validating: names.reduce((validating, name) => validating || metaFor(name).validating, false),
+        valid: names.reduce((valid, name) => valid && metaFor(name).valid, true),
     };
     return {
         ...form,
