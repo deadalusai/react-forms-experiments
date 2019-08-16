@@ -14,6 +14,7 @@ export interface FieldMeta {
     readonly focused: boolean;
     readonly dirty: boolean;
     readonly disabled: boolean;
+    readonly validating: boolean;
     readonly error: FieldError | null;
 }
 
@@ -26,6 +27,7 @@ export interface FormMeta {
     readonly touched: boolean;
     readonly dirty: boolean;
     readonly disabled: boolean;
+    readonly validating: boolean;
 }
 
 export type Field<TValue = any, TKey = any> = {
@@ -61,26 +63,21 @@ export const keysOf = Object.keys as <T>(obj: T) => (keyof T)[];
  * @param initial The initial state of the form.
  * @param validator If provided, this form validator is used to calculate the initial form validation state.
  */
-export function formInit<TForm>(name: string, initial: TForm, validator?: FormValidator<TForm>): Form<TForm> {
+export function formInit<TForm>(name: string, initial: TForm): Form<TForm> {
     const fields: Partial<FormFields<TForm>> = {};
-    const errors = validator && validator(initial);
-    let valid = true;
     for (const name of keysOf(initial)) {
         const value = initial[name];
-        const error = errors && errors[name];
         const meta: FieldMeta = {
-            valid: !error,
+            valid: true,
+            validating: false,
             visited: false,
             touched: false,
             focused: false,
             dirty: false,
             disabled: false,
-            error: error! || null, // todo: TSC gets confused here - not sure why
+            error: null,
         };
         fields[name] = { name, value, meta };
-        if (error) {
-            valid = false;
-        }
     }
     return {
         name,
@@ -88,7 +85,8 @@ export function formInit<TForm>(name: string, initial: TForm, validator?: FormVa
         current: initial,
         fields: fields as FormFields<TForm>,
         meta: {
-            valid,
+            valid: true,
+            validating: false,
             touched: false,
             dirty: false,
             disabled: false,
@@ -103,52 +101,57 @@ export type FieldUpdate<TForm = any, TValue = any> = {
     touched?: boolean;
     focused?: boolean;
     disabled?: boolean;
+    validating?: boolean;
 };
 
 /**
  * Updates the given form with the given field data.
  * NOTE: Field dirty state is always calulcated based on the initial state of the form.
  * @param form The form to update
- * @param name The field in the form to update.
+ * @param updates A list of field updates to apply.
  */
-export function formUpdateField<TForm>(form: Form<TForm>, update: FieldUpdate<TForm>): Form<TForm> {
-    const name = update.name;
-    const field = form.fields[name];
-    if (!field) {
-        return form;
+export function formUpdateFields<TForm>(form: Form<TForm>, updates: FieldUpdate<TForm>[]): Form<TForm> {
+    const newValues: Partial<TForm> = {};
+    const newFields: Partial<FormFields<TForm>> = {};
+    for (const update of updates) {
+        const name = update.name;
+        const field = form.fields[name];
+        if (!field) {
+            continue;
+        }
+        const value = "value" in update ? update.value! : field.value;
+        // Calculate new field meta
+        const meta: FieldMeta = {
+            ...field.meta,
+            touched: "touched" in update ? update.touched! : field.meta.touched,
+            focused: "focused" in update ? update.focused! : field.meta.focused,
+            visited: "visited" in update ? update.visited! : field.meta.visited,
+            disabled: "disabled" in update ? update.disabled! : field.meta.disabled,
+            validating: "validating" in update ? update.validating! : field.meta.validating,
+            dirty: value != form.initial[name],
+        };
+        newValues[name] = value;
+        newFields[name] = { name, value, meta };
     }
-    const value = "value" in update ? update.value! : field.value;
-    // Calculate new field meta
-    const fieldMeta = {
-        ...field.meta,
-        touched: "touched" in update ? update.touched! : field.meta.touched,
-        focused: "focused" in update ? update.focused! : field.meta.focused,
-        visited: "visited" in update ? update.visited! : field.meta.visited,
-        disabled: "disabled" in update ? update.disabled! : field.meta.disabled,
-        dirty: value != form.initial[name],
-    };
     // Calculate new form meta
-    const metaFor = (fieldName: keyof TForm) => fieldName === name ? fieldMeta : form.fields[fieldName].meta;
+    const metaFor = (fieldName: keyof TForm) => ((newFields[fieldName] as any) || form.fields[fieldName]).meta;
     const names = keysOf(form.fields);
     const formMeta = {
         ...form.meta,
         touched: names.reduce((touched, name) => touched || metaFor(name).touched, false),
         dirty: names.reduce((dirty, name) => dirty || metaFor(name).dirty, false),
         disabled: names.reduce((disabled, name) => disabled && metaFor(name).disabled, true),
+        validating: names.reduce((validating, name) => validating || metaFor(name).validating, false),
     };
     return {
         ...form,
         current: {
             ...form.current,
-            [name]: value,
+            ...newValues,
         },
         fields: {
             ...form.fields,
-            [name]: {
-                ...field,
-                value,
-                meta: fieldMeta,
-            },
+            ...newFields,
         },
         meta: formMeta,
     };
@@ -161,13 +164,13 @@ export function formUpdateField<TForm>(form: Form<TForm>, update: FieldUpdate<TF
  * @param name The field in the form to update.
  */
 export function formUpdateErrors<TForm>(form: Form<TForm>, errors: FormErrors<TForm>): Form<TForm> {
-    let valid = true;
-    // Calculate new field meta
+    let formValid = true;
+    // Calculate new field/form meta
     const fields: Partial<FormFields<TForm>> = {};
     const names = keysOf(form.fields);
     for (const name of names) {
         const field = form.fields[name];
-        const error = errors[name];
+        const error = errors[name] || null;
         fields[name] = {
             ...field,
             meta: {
@@ -177,7 +180,7 @@ export function formUpdateErrors<TForm>(form: Form<TForm>, errors: FormErrors<TF
             }
         };
         if (error) {
-            valid = false;
+            formValid = false;
         }
     }
     return {
@@ -185,7 +188,7 @@ export function formUpdateErrors<TForm>(form: Form<TForm>, errors: FormErrors<TF
         fields: fields as FormFields<TForm>,
         meta: {
             ...form.meta,
-            valid,
+            valid: formValid,
         },
     };
 }
@@ -195,6 +198,7 @@ export interface FormUpdate {
     touched?: boolean;
     focused?: boolean;
     disabled?: boolean;
+    validating?: boolean;
 }
 
 /**

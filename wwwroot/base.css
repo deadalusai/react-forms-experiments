@@ -29,6 +29,7 @@ div.input-container--touched {}
 div.input-container--focused .input-container--label { text-decoration: underline; }
 div.input-container--dirty {}
 div.input-container--pristine {}
+div.input-container--validating {}
 
 span.error {
     color: red;

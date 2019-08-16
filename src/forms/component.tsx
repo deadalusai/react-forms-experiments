@@ -2,7 +2,7 @@ import * as React from "react";
 import { connect } from "react-redux";
 
 import * as FormsStore from "forms/store";
-import { Form, FormUpdate, FieldUpdate, FormValidator, formInit, formUpdateField, formUpdate, formUpdateErrors } from "forms/core";
+import { Form, FormUpdate, FieldUpdate, FormValidator, formInit, formUpdate, formUpdateFields, formUpdateErrors } from "forms/core";
 
 export interface FormComponentProps<TForm = any> {
     form: Form<TForm>;
@@ -28,13 +28,19 @@ function lift<TForm, TOwnProps>(
         let [form, setState] = useState();
         // First time load - build the initial form state
         if (!form && options.initial) {
-            form = formInit<TForm>(options.name, options.initial, options.validator);
+            form = formInit<TForm>(options.name, options.initial);
+            if (options.validator) {
+                form = formUpdateErrors(form, options.validator(form.current));
+            }
         }
         // Our interface with the wrapped component
         const formProps: FormComponentProps<TForm> = {
             form: form!,
             formInit: (initial) => {
-                form = formInit<TForm>(options.name, initial, options.validator);
+                form = formInit<TForm>(options.name, initial);
+                if (options.validator) {
+                    form = formUpdateErrors(form, options.validator(form.current));
+                }
                 setState(form);
                 return form;
             },
@@ -44,15 +50,14 @@ function lift<TForm, TOwnProps>(
                 }
                 if ("name" in update) {
                     // Field update
-                    form = formUpdateField(form, update);
+                    form = formUpdateFields(form, [update]);
                     // Apply validation only when the form is being updated with new data.
                     if ("value" in update && options.validator) {
-                        const errors = options.validator(form.current);
-                        form = formUpdateErrors(form, errors);
+                        form = formUpdateErrors(form, options.validator(form.current));
                     }
                 }
                 else {
-                    // Form-wide update
+                    // Form-wide meta update
                     form = formUpdate(form, update);
                 }
                 setState(form);
@@ -66,7 +71,7 @@ function lift<TForm, TOwnProps>(
 
 /**
  * Higher-order component which provides a form state-backed FormComponentProps implementation
- * 
+ *
  * @param options Configuration options for the form.
  */
 export function injectStateBackedForm<TForm = any, TOwnProps = {}>(options: FormOptions<TForm>) {
@@ -77,7 +82,7 @@ export function injectStateBackedForm<TForm = any, TOwnProps = {}>(options: Form
 
 /**
  * Higher-order component which provides a redux-backed FormComponentProps implementation
- * 
+ *
  * @param options Configuration options for the form.
  */
 export function injectStoreBackedForm<TForm = any, TOwnProps = {}>(options: FormOptions<TForm>) {

@@ -41,6 +41,7 @@ export function InputContainer({ className, label, field, children }: InputConta
         field.meta.disabled && "input-container--disabled",
         field.meta.focused && "input-container--focused",
         field.meta.touched && "input-container--touched",
+        field.meta.validating && "input-container--validating",
         field.meta.dirty ? "input-container--dirty" : "input-container--pristine",
         className
     );
@@ -48,6 +49,7 @@ export function InputContainer({ className, label, field, children }: InputConta
         <div className={className}>
             <label className="input-container--label" htmlFor={field.name}>
                 {label || field.name}
+                {field.meta.validating && " ⏳"}
             </label>
             {children}
             {(touched || visited) && error && <ErrorMessage error={error} />}
