@@ -94,7 +94,7 @@ export function formInit<TForm>(name: string, initial: TForm): Form<TForm> {
     };
 }
 
-export type FieldUpdate<TForm = any, TValue = any> = {
+export type FieldUpdate<TValue = any, TForm = any> = {
     name: keyof TForm,
     value?: TValue;
     visited?: boolean;
@@ -110,7 +110,7 @@ export type FieldUpdate<TForm = any, TValue = any> = {
  * @param form The form to update
  * @param updates A list of field updates to apply.
  */
-export function formUpdateFields<TForm>(form: Form<TForm>, updates: FieldUpdate<TForm>[]): Form<TForm> {
+export function formUpdateFields<TForm>(form: Form<TForm>, updates: FieldUpdate<any, TForm>[]): Form<TForm> {
     const newValues: Partial<TForm> = {};
     const newFields: Partial<FormFields<TForm>> = {};
     for (const update of updates) {

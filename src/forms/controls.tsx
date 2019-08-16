@@ -63,20 +63,32 @@ export function InputContainer({ className, label, field, children }: InputConta
 
 export interface TextInputProps {
     className?: string;
-    field: Field<string | null>;
-    fieldChange: (value: FieldUpdate<any, string | null>) => void;
+    field: Field<string>;
+    fieldUpdate: (update: FieldUpdate<string>) => void;
+    onChange?: (value: string) => void;
+    onFocus?: () => void;
+    onBlur?: () => void;
 }
-export function TextInput({ className, field, fieldChange }: TextInputProps) {
+export function TextInput({ className, field, fieldUpdate, onChange, onFocus, onBlur }: TextInputProps) {
     return (
         <input
             className={classString("input--text", className)}
             name={name}
             type="text"
             disabled={field.meta.disabled}
-            value={field.value === null ? "" : field.value}
-            onFocus={() => fieldChange({ name: field.name, focused: true })}
-            onBlur={() => fieldChange({ name: field.name, visited: true, focused: false, })}
-            onChange={e => fieldChange({ name: field.name, value: e.target.value, touched: true })} />
+            value={field.value}
+            onFocus={() => {
+                fieldUpdate({ name: field.name, focused: true });
+                onFocus && onFocus();
+            }}
+            onBlur={() => {
+                fieldUpdate({ name: field.name, visited: true, focused: false, });
+                onBlur && onBlur();
+            }}
+            onChange={e => {
+                fieldUpdate({ name: field.name, value: e.target.value, touched: true });
+                onChange && onChange(e.target.value);
+            }} />
     );
 }
 
@@ -103,21 +115,36 @@ export interface SelectInputOption {
 export interface SelectInputProps {
     className?: string;
     field: Field;
-    fieldChange: (value: FieldUpdate) => void;
+    fieldUpdate: (update: FieldUpdate) => void;
+    onChange?: (value: any) => void;
+    onFocus?: () => void;
+    onBlur?: () => void;
     options: SelectInputOption[];
 }
-export function SelectInput({ className, field, fieldChange, options }: SelectInputProps) {
+export function SelectInput({ className, field, fieldUpdate, onFocus, onBlur, onChange, options }: SelectInputProps) {
     return (
         <select
             className={classString("input--select", className)}
             name={field.name}
             value={getOptionId(options, field.value)}
             disabled={field.meta.disabled}
-            onFocus={() => fieldChange({ name: field.name, focused: true })}
-            onBlur={() => fieldChange({ name: field.name, visited: true, focused: false })}
-            onChange={e => fieldChange({ name: field.name, value: getOptionValue(options, e.target.value), touched: true })}>
+            onFocus={() => {
+                fieldUpdate({ name: field.name, focused: true });
+                onFocus && onFocus();
+            }}
+            onBlur={() => {
+                fieldUpdate({ name: field.name, visited: true, focused: false, });
+                onBlur && onBlur();
+            }}
+            onChange={e => {
+                const value = getOptionValue(options, e.target.value);
+                fieldUpdate({ name: field.name, value, touched: true });
+                onChange && onChange(value);
+            }}>
             {options.map((option, id) => (
-                <option key={id} className={className} value={getOptionId(options, option.value)}>{option.label}</option>
+                <option key={id} className={className} value={getOptionId(options, option.value)}>
+                    {option.label}
+                </option>
             ))}
         </select>
     );
@@ -141,10 +168,13 @@ function getSelectedValues(options: SelectInputOption[], selectedOptions: HTMLCo
 export interface MultiSelectInputProps {
     className?: string;
     field: Field<any[]>;
-    fieldChange: (value: FieldUpdate<any, any[]>) => void;
+    fieldUpdate: (update: FieldUpdate<any[]>) => void;
+    onChange?: (value: any[]) => void;
+    onFocus?: () => void;
+    onBlur?: () => void;
     options: SelectInputOption[];
 }
-export function MultiSelectInput({ className, field, fieldChange, options }: MultiSelectInputProps) {
+export function MultiSelectInput({ className, field, fieldUpdate, onFocus, onBlur, onChange, options }: MultiSelectInputProps) {
     return (
         <select
             className={classString("input--multi-select", className)}
@@ -152,11 +182,23 @@ export function MultiSelectInput({ className, field, fieldChange, options }: Mul
             value={field.value.map(v => getOptionId(options, v))}
             disabled={field.meta.disabled}
             multiple={true}
-            onFocus={() => fieldChange({ name: field.name, focused: true })}
-            onBlur={() => fieldChange({ name: field.name, visited: true, focused: false })}
-            onChange={e => fieldChange({ name: field.name, value: getSelectedValues(options, e.target.selectedOptions), touched: true })}>
+            onFocus={() => {
+                fieldUpdate({ name: field.name, focused: true });
+                onFocus && onFocus();
+            }}
+            onBlur={() => {
+                fieldUpdate({ name: field.name, visited: true, focused: false, });
+                onBlur && onBlur();
+            }}
+            onChange={e => {
+                const value = getSelectedValues(options, e.target.selectedOptions);
+                fieldUpdate({ name: field.name, value, touched: true });
+                onChange && onChange(value);
+            }}>
             {options.map((option, id) => (
-                <option key={id} className={className} value={getOptionId(options, option.value)}>{option.label}</option>
+                <option key={id} className={className} value={getOptionId(options, option.value)}>
+                    {option.label}
+                </option>
             ))}
         </select>
     );
@@ -170,10 +212,13 @@ export interface RadioInputProps {
     className?: string,
     label?: React.ReactNode;
     value: any;
-    field: Field<any>;
-    fieldChange: (value: FieldUpdate<any, any>) => void;
+    field: Field;
+    fieldUpdate: (update: FieldUpdate) => void;
+    onChange?: (value: any) => void;
+    onFocus?: () => void;
+    onBlur?: () => void;
 }
-export function RadioInput({ className, label, value, field, fieldChange }: RadioInputProps) {
+export function RadioInput({ className, label, value, field, fieldUpdate, onFocus, onBlur, onChange }: RadioInputProps) {
     return (
         <label className="radio-item">
             <input
@@ -182,9 +227,18 @@ export function RadioInput({ className, label, value, field, fieldChange }: Radi
                 name={field.name}
                 disabled={field.meta.disabled}
                 checked={value === field.value}
-                onFocus={() => fieldChange({ name: field.name, focused: true })}
-                onBlur={() => fieldChange({ name: field.name, visited: true, focused: false })}
-                onChange={() => fieldChange({ name: field.name, value, touched: true })} />
+                onFocus={() => {
+                    fieldUpdate({ name: field.name, focused: true });
+                    onFocus && onFocus();
+                }}
+                onBlur={() => {
+                    fieldUpdate({ name: field.name, visited: true, focused: false, });
+                    onBlur && onBlur();
+                }}
+                onChange={() => {
+                    fieldUpdate({ name: field.name, value, touched: true });
+                    onChange && onChange(value);
+                }} />
             {label && <span>{label}</span>}
         </label>
     );
@@ -199,9 +253,12 @@ export interface CheckboxInputProps {
     label?: React.ReactNode;
     values?: { checked: any, unchecked: any };
     field: Field;
-    fieldChange: (value: FieldUpdate) => void;
+    fieldUpdate: (update: FieldUpdate) => void;
+    onChange?: (value: any) => void;
+    onFocus?: () => void;
+    onBlur?: () => void;
 }
-export function CheckboxInput({ className, label, values, field, fieldChange }: CheckboxInputProps) {
+export function CheckboxInput({ className, label, values, field, fieldUpdate, onFocus, onBlur, onChange }: CheckboxInputProps) {
     // If no "checked/unchecked" values are provided fall back to a true/false flipflop
     if (!values) {
         values = { checked: true, unchecked: false };
@@ -215,9 +272,19 @@ export function CheckboxInput({ className, label, values, field, fieldChange }: 
                 name={field.name}
                 disabled={field.meta.disabled}
                 checked={checked}
-                onFocus={() => fieldChange({ name: field.name, focused: true })}
-                onBlur={() => fieldChange({ name: field.name, visited: true, focused: false })}
-                onChange={() => fieldChange({ name: field.name, value: checked ? values!.unchecked : values!.checked, touched: true })} />
+                onFocus={() => {
+                    fieldUpdate({ name: field.name, focused: true });
+                    onFocus && onFocus();
+                }}
+                onBlur={() => {
+                    fieldUpdate({ name: field.name, visited: true, focused: false, });
+                    onBlur && onBlur();
+                }}
+                onChange={() => {
+                    const value = checked ? values!.unchecked : values!.checked;
+                    fieldUpdate({ name: field.name, value, touched: true });
+                    onChange && onChange(value);
+                }} />
             {label && <span>{label}</span>}
         </label>
     );

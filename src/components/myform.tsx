@@ -93,7 +93,7 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                         field={form.fields.text1}>
                         <TextInput
                             field={form.fields.text1}
-                            fieldChange={formUpdate} />
+                            fieldUpdate={formUpdate} />
                     </InputContainer>
 
                     <InputContainer
@@ -101,18 +101,18 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                         field={form.fields.text2}>
                         <TextInput
                             field={form.fields.text2}
-                            fieldChange={formUpdate} />
+                            fieldUpdate={formUpdate} />
                     </InputContainer>
-                    
+
                     <InputContainer
                         label="Checkbox input"
                         field={form.fields.checkbox1}>
                         <CheckboxInput
                             label="Checkbox-sepecific label"
                             field={form.fields.checkbox1}
-                            fieldChange={formUpdate} />
+                            fieldUpdate={formUpdate} />
                     </InputContainer>
-                    
+
                     <InputContainer
                         label="Mutually-exclusive checkbox group"
                         field={form.fields.checkbox2}>
@@ -122,31 +122,31 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                                 label={option.label}
                                 values={{ checked: option.value, unchecked: null }}
                                 field={form.fields.checkbox2}
-                                fieldChange={formUpdate} />
+                                fieldUpdate={formUpdate} />
                         ))}
                     </InputContainer>
-                    
+
                     <InputContainer
                         label="Select input"
                         field={form.fields.select1}>
                         <SelectInput
                             field={form.fields.select1}
-                            fieldChange={formUpdate}
+                            fieldUpdate={formUpdate}
                             options={[
                                 { label: "-- Please select --", value: null },
                                 ...FOO_OPTIONS,
                             ]} />
                     </InputContainer>
-                    
+
                     <InputContainer
                         label="Multi-select input"
                         field={form.fields.select2}>
                         <MultiSelectInput
                             field={form.fields.select2}
-                            fieldChange={formUpdate}
+                            fieldUpdate={formUpdate}
                             options={BAZ_OPTIONS} />
                     </InputContainer>
-                    
+
                     <InputContainer
                         label="Radio group"
                         field={form.fields.radio1}>
@@ -156,10 +156,10 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                                 label={option.label}
                                 value={option.value}
                                 field={form.fields.radio1}
-                                fieldChange={formUpdate} />
+                                fieldUpdate={formUpdate} />
                         ))}
                     </InputContainer>
-                    
+
                     <div>
                         <button type="submit">Submit</button>
                         <button type="button" onClick={() => this.reset(form)}>Reset</button>
@@ -170,12 +170,25 @@ export class MyFormView extends React.Component<MyFormViewProps & FormComponentP
                         const { meta } = form.fields[name];
                         return (
                             <button key={name} type="button" onClick={() => formUpdate({ name, disabled: !meta.disabled })}>
-                                {meta.disabled ? "Enable" : "Disable"} {name}
+                                {name} {meta.disabled ? "enable" : "disable"}
                             </button>
                         );
                     })}
                     <button key={name} type="button" onClick={() => formUpdate({ disabled: !form.meta.disabled })}>
-                        {form.meta.disabled ? "Enable" : "Disable"} all fields
+                        all fields {form.meta.disabled ? "enable" : "disable"}
+                    </button>
+                </section>
+                <section>
+                    {keysOf(form.fields).map(name => {
+                        const { meta } = form.fields[name];
+                        return (
+                            <button key={name} type="button" onClick={() => formUpdate({ name, validating: !meta.validating })}>
+                                {name} {meta.validating ? "normal" : "validating"}
+                            </button>
+                        );
+                    })}
+                    <button key={name} type="button" onClick={() => formUpdate({ validating: !form.meta.validating })}>
+                        all fields {form.meta.validating ? "normal" : "validating"}
                     </button>
                 </section>
                 <pre>
