@@ -48,14 +48,14 @@ const formFieldValidator = Validators.createFormValidator<MyForm>({
     text1: [
         Validators.required(),
         Validators.pattern(/hello/i, "ERROR.MUST_CONTAIN_HELLO"),
-        async (value) => {
+        Validators.onBlur(async (value) => {
             // Fake a delay
             await delayMs(2000);
             const expected = 8;
             return (value.length < expected)
                 ? { error: "ERROR.TEXT_LENGTH_LESS_THAN_ASYNC", params: { value, expected } }
                 : null;
-        },
+        }),
     ],
     text2: [
         Validators.required(),
@@ -65,7 +65,7 @@ const formFieldValidator = Validators.createFormValidator<MyForm>({
     select1: [
         Validators.required(),
         Validators.greaterThan(1),
-        value => (value == 3) ? { error: "ERROR.THREE_NOT_ALLOWED", params: { value } } : null,
+        value => value === 3 ? { error: "ERROR.THREE_NOT_ALLOWED", params: { value } } : null,
     ],
     select2: [
         value => value.length === 0 ? { error: "ERROR.REQUIRED" } : null,
@@ -75,8 +75,8 @@ const formFieldValidator = Validators.createFormValidator<MyForm>({
 });
 
 // Building a form validation routine manually
-const formValidator = (form: MyForm) => {
-    const errors = formFieldValidator(form);
+const formValidator = (form: MyForm, info: Validators.FormValidationInfo) => {
+    const errors = formFieldValidator(form, info);
     // Cross-field validation example
     if (!errors.text2 && form.text1 != form.text2) {
         errors.text2 = { error: "ERROR.FIELD1_FIELD2_MUST_MATCH" };
@@ -206,7 +206,7 @@ export class MyFormView extends React.Component<MyFormViewProps> {
                     </button>
                 </section>
                 <pre>
-                    form: {JSON.stringify(form, null, 4)}
+                    form: {JSON.stringify(form.meta, null, 4)}
                 </pre>
             </section>
         );

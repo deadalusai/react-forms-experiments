@@ -36,10 +36,13 @@ export interface FieldMeta {
 
 export interface FormMeta {
     readonly valid: boolean;
+    readonly visited: boolean;
     readonly touched: boolean;
     readonly dirty: boolean;
     readonly disabled: boolean;
     readonly validating: boolean;
+    readonly focused: string | null; // The field which currently holds focus
+    readonly blurred: string | null; // The field which just blurred
 }
 
 export type Field<TValue = any, TKey = any> = {
@@ -94,12 +97,15 @@ export function formInit<TForm>(name: string, initial: TForm): Form<TForm> {
         current: initial,
         fields: fields as FormFields<TForm>,
         meta: {
+            visited: false,
             valid: true,
             validating: false,
             touched: false,
             dirty: false,
             disabled: false,
-        }
+            focused: null,
+            blurred: null,
+        },
     };
 }
 
@@ -140,14 +146,19 @@ export function formUpdateFields<TForm>(form: Form<TForm>, updates: FieldUpdate<
         newValues[name] = value;
         newFields[name] = { name, value, meta };
     }
-    // Calculate new form meta
     const metaFor = (fieldName: keyof TForm) => ((newFields[fieldName] as any) || form.fields[fieldName]).meta;
     const names = keysOf(form.fields);
+    // Determine which fields just gained/lost focused
+    const focused = names.find((name) => metaFor(name).focused) as string || null;
+    const blurred = (focused !== form.meta.focused && form.meta.focused !== null) ? form.meta.focused : form.meta.blurred;
+    // Calculate new form meta
     const formMeta: FormMeta = {
         ...form.meta,
         touched: names.reduce((touched, name) => touched || metaFor(name).touched, false),
         dirty: names.reduce((dirty, name) => dirty || metaFor(name).dirty, false),
         disabled: names.reduce((disabled, name) => disabled && metaFor(name).disabled, false),
+        blurred,
+        focused,
     };
     return {
         ...form,
@@ -252,7 +263,6 @@ export function formCompleteAsyncError<TForm>(form: Form<TForm>, name: keyof TFo
 export interface FormUpdate {
     visited?: boolean;
     touched?: boolean;
-    focused?: boolean;
     disabled?: boolean;
     validating?: boolean;
 }

@@ -82,7 +82,7 @@ export function TextInput({ className, field, fieldUpdate, onChange, onFocus, on
                 onFocus && onFocus();
             }}
             onBlur={() => {
-                fieldUpdate({ name: field.name, visited: true, focused: false, });
+                fieldUpdate({ name: field.name, visited: true, focused: false });
                 onBlur && onBlur();
             }}
             onChange={e => {
@@ -133,7 +133,7 @@ export function SelectInput({ className, field, fieldUpdate, onFocus, onBlur, on
                 onFocus && onFocus();
             }}
             onBlur={() => {
-                fieldUpdate({ name: field.name, visited: true, focused: false, });
+                fieldUpdate({ name: field.name, visited: true, focused: false });
                 onBlur && onBlur();
             }}
             onChange={e => {
@@ -187,7 +187,7 @@ export function MultiSelectInput({ className, field, fieldUpdate, onFocus, onBlu
                 onFocus && onFocus();
             }}
             onBlur={() => {
-                fieldUpdate({ name: field.name, visited: true, focused: false, });
+                fieldUpdate({ name: field.name, visited: true, focused: false });
                 onBlur && onBlur();
             }}
             onChange={e => {
@@ -232,7 +232,7 @@ export function RadioInput({ className, label, value, field, fieldUpdate, onFocu
                     onFocus && onFocus();
                 }}
                 onBlur={() => {
-                    fieldUpdate({ name: field.name, visited: true, focused: false, });
+                    fieldUpdate({ name: field.name, visited: true, focused: false });
                     onBlur && onBlur();
                 }}
                 onChange={() => {
@@ -277,7 +277,7 @@ export function CheckboxInput({ className, label, values, field, fieldUpdate, on
                     onFocus && onFocus();
                 }}
                 onBlur={() => {
-                    fieldUpdate({ name: field.name, visited: true, focused: false, });
+                    fieldUpdate({ name: field.name, visited: true, focused: false });
                     onBlur && onBlur();
                 }}
                 onChange={() => {
