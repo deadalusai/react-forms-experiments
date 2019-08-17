@@ -6,7 +6,7 @@ import { delayMs } from "util";
 import { RootState } from "store";
 import { Form, FormComponentProps, injectStoreBackedForm } from "forms";
 import * as Validators from "forms/validators";
-import { keysOf, FieldError } from "forms/core";
+import { keysOf } from "forms/core";
 import { InputContainer, TextInput, SelectInput, MultiSelectInput, RadioInput, CheckboxInput } from "forms/controls";
 
 const FORM_NAME = "my-form";
@@ -48,6 +48,14 @@ const formFieldValidator = Validators.createFormValidator<MyForm>({
     text1: [
         Validators.required(),
         Validators.pattern(/hello/i, "ERROR.MUST_CONTAIN_HELLO"),
+        async (value) => {
+            // Fake a delay
+            await delayMs(2000);
+            const expected = 8;
+            return (value.length < expected)
+                ? { error: "ERROR.TEXT_LENGTH_LESS_THAN_ASYNC", params: { value, expected } }
+                : null;
+        },
     ],
     text2: [
         Validators.required(),
@@ -76,15 +84,6 @@ const formValidator = (form: MyForm) => {
     return errors;
 };
 
-const asyncStringLengthValidator = async (value: string): Promise<FieldError | null> => {
-    // Fake a delay
-    await delayMs(2000);
-    const expected = 8;
-    return (value.length < expected)
-        ? { error: "ERROR.TEXT_LENGTH_LESS_THAN_ASYNC", params: { value, expected } }
-        : null;
-};
-
 export interface StateProps {}
 export interface ActionProps {}
 export interface OwnProps {}
@@ -103,8 +102,7 @@ export class MyFormView extends React.Component<MyFormViewProps> {
                         field={form.fields.text1}>
                         <TextInput
                             field={form.fields.text1}
-                            fieldUpdate={formUpdate}
-                            onBlur={() => this.startText1Validation()} />
+                            fieldUpdate={formUpdate} />
                     </InputContainer>
 
                     <InputContainer
@@ -212,29 +210,6 @@ export class MyFormView extends React.Component<MyFormViewProps> {
                 </pre>
             </section>
         );
-    }
-
-    private text1ValidationVersion = 0;
-    public async startText1Validation() {
-        let text1 = this.props.form.fields.text1;
-        const { name, value } = text1;
-        // Skip async validation until we're locally valid
-        if (text1.meta.error) {
-            return;
-        }
-        this.text1ValidationVersion += 1;
-        const version = this.text1ValidationVersion;
-        this.props.formUpdate({ name, validating: true });
-        let error = await asyncStringLengthValidator(value);
-        // HACK: Ensure we get only the *latest* validation result
-        if (version != this.text1ValidationVersion) {
-            return;
-        }
-        // Local validation state may have changed since the async validator started.
-        // Don't overwrite it!
-        text1 = this.props.form.fields.text1;
-        error = text1.meta.error || error;
-        this.props.formUpdate({ name, validating: false, error });
     }
 
     public submit(form: Form<MyForm>) {

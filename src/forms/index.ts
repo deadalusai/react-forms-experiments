@@ -1,15 +1,17 @@
 export { 
     Form,
     FormMeta,
-    FormErrors,
-    FormValidator,
     FormUpdate,
     Field,
     FieldMeta,
     FieldError,
-    FieldValidator,
     FieldUpdate,
 } from "forms/core"
+export {
+    FormErrors,
+    FormValidator,
+    FieldValidator,
+} from "forms/validators";
 export {
     FormComponentProps,
     injectStoreBackedForm,

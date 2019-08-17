@@ -5,6 +5,22 @@
 export interface FieldError {
     error: string;
     params?: any;
+}
+
+export interface AsyncFieldError {
+    id: number;
+}
+
+function isFieldError(e: any): e is FieldError {
+    return typeof e === "object" && "error" in e;
+}
+
+function isAsyncFieldError(e: any): e is AsyncFieldError {
+    return typeof e === "object" && "id" in e;
+}
+
+export type FieldErrorMap<TForm = any> = {
+    [TKey in keyof TForm]?: FieldError | AsyncFieldError;
 };
 
 export interface FieldMeta {
@@ -17,10 +33,6 @@ export interface FieldMeta {
     readonly validating: boolean;
     readonly error: FieldError | null;
 }
-
-export type FormErrors<TForm> = {
-    [key in keyof TForm]?: FieldError;
-};
 
 export interface FormMeta {
     readonly valid: boolean;
@@ -47,9 +59,6 @@ export type Form<TForm = any> = {
     readonly fields: FormFields<TForm>;
     readonly meta: FormMeta;
 };
-
-export type FieldValidator<TValue = any> = (value: TValue) => FieldError | null;
-export type FormValidator<TForm = any> = (form: TForm) => FormErrors<TForm>;
 
 //
 // Functions
@@ -101,8 +110,6 @@ export type FieldUpdate<TValue = any, TForm = any> = {
     touched?: boolean;
     focused?: boolean;
     disabled?: boolean;
-    validating?: boolean;
-    error?: FieldError | null;
 };
 
 /**
@@ -121,7 +128,6 @@ export function formUpdateFields<TForm>(form: Form<TForm>, updates: FieldUpdate<
             continue;
         }
         const value = "value" in update ? update.value! : field.value;
-        const error = "error" in update ? update.error! : field.meta.error;
         // Calculate new field meta
         const meta: FieldMeta = {
             ...field.meta,
@@ -129,10 +135,7 @@ export function formUpdateFields<TForm>(form: Form<TForm>, updates: FieldUpdate<
             focused: "focused" in update ? update.focused! : field.meta.focused,
             visited: "visited" in update ? update.visited! : field.meta.visited,
             disabled: "disabled" in update ? update.disabled! : field.meta.disabled,
-            validating: "validating" in update ? update.validating! : field.meta.validating,
             dirty: value != form.initial[name],
-            valid: !error,
-            error,
         };
         newValues[name] = value;
         newFields[name] = { name, value, meta };
@@ -141,11 +144,10 @@ export function formUpdateFields<TForm>(form: Form<TForm>, updates: FieldUpdate<
     const metaFor = (fieldName: keyof TForm) => ((newFields[fieldName] as any) || form.fields[fieldName]).meta;
     const names = keysOf(form.fields);
     const formMeta: FormMeta = {
+        ...form.meta,
         touched: names.reduce((touched, name) => touched || metaFor(name).touched, false),
         dirty: names.reduce((dirty, name) => dirty || metaFor(name).dirty, false),
-        disabled: names.reduce((disabled, name) => disabled && metaFor(name).disabled, true),
-        validating: names.reduce((validating, name) => validating || metaFor(name).validating, false),
-        valid: names.reduce((valid, name) => valid && metaFor(name).valid, true),
+        disabled: names.reduce((disabled, name) => disabled && metaFor(name).disabled, false),
     };
     return {
         ...form,
@@ -162,29 +164,34 @@ export function formUpdateFields<TForm>(form: Form<TForm>, updates: FieldUpdate<
 }
 
 /**
- * Updates the given form with the given field data.
- * NOTE: Field dirty state is always calulcated based on the initial state of the form.
+ * Updates the error state of each field in the form.
  * @param form The form to update
- * @param name The field in the form to update.
+ * @param errors Current field error information.
  */
-export function formUpdateErrors<TForm>(form: Form<TForm>, errors: FormErrors<TForm>): Form<TForm> {
+export function formUpdateErrors<TForm>(form: Form<TForm>, errorMap: FieldErrorMap<TForm>): Form<TForm> {
     let formValid = true;
+    let formValidating = false;
     // Calculate new field/form meta
     const fields: Partial<FormFields<TForm>> = {};
-    const names = keysOf(form.fields);
-    for (const name of names) {
+    for (const name of keysOf(form.fields)) {
         const field = form.fields[name];
-        const error = errors[name] || null;
+        const error = errorMap[name];
+        const isAsync = isAsyncFieldError(error);
+        const isError = isFieldError(error);
         fields[name] = {
             ...field,
             meta: {
                 ...field.meta,
-                valid: !error,
-                error,
-            }
+                validating: isAsync,
+                valid: isError === false,
+                error: isError ? error : null,
+            },
         };
-        if (error) {
+        if (isError) {
             formValid = false;
+        }
+        if (isAsync) {
+            formValidating = true;
         }
     }
     return {
@@ -193,7 +200,52 @@ export function formUpdateErrors<TForm>(form: Form<TForm>, errors: FormErrors<TF
         meta: {
             ...form.meta,
             valid: formValid,
+            validating: formValidating,
         },
+    };
+}
+
+/**
+ * Updates the error state of a single field in the form after it has completed async validation.
+ * @param form The form to update
+ * @param name The name of the field to update.
+ * @param error The error to write to the field.
+ */
+export function formCompleteAsyncError<TForm>(form: Form<TForm>, name: keyof TForm, error: FieldError | null) {
+    const field = form.fields[name];
+    if (!field) {
+        return form;
+    }
+    // Local synchronous validation may have already written a new error.
+    // If so, we have to throw this asynchronous validation result away.
+    if (field.meta.error) {
+        return form;
+    }
+    // Calculate new field meta
+    const meta: FieldMeta = {
+        ...field.meta,
+        validating: false,
+        valid: !error,
+        error,
+    };
+    // Calculate new form meta
+    const metaFor = (fieldName: keyof TForm) => (name === fieldName) ? meta : form.fields[name].meta;
+    const names = keysOf(form.fields);
+    const formMeta: FormMeta = {
+        ...form.meta,
+        validating: names.reduce((validating, name) => validating && metaFor(name).validating, false),
+        disabled: names.reduce((disabled, name) => disabled && metaFor(name).disabled, false),
+    };
+    return {
+        ...form,
+        fields: {
+            ...form.fields,
+            [name]: {
+                ...field,
+                meta,
+            },
+        },
+        meta: formMeta,
     };
 }
 
