@@ -5,6 +5,7 @@
 export interface FieldError {
     error: string;
     params?: any;
+    sticky?: true;
 }
 
 export interface AsyncFieldError {
@@ -139,7 +140,6 @@ export function formUpdateField<TForm>(form: Form<TForm>, update: FieldUpdate<an
         disabled: "disabled" in update ? update.disabled! : field.meta.disabled,
         dirty: value != form.initial[name],
     };
-    console.log(name, value, meta);
     // Calculate new form metadata
     const metaFor = (fieldName: keyof TForm) => fieldName === name ? meta : form.fields[fieldName].meta;
     const names = keysOf(form.fields);
@@ -164,32 +164,48 @@ export function formUpdateField<TForm>(form: Form<TForm>, update: FieldUpdate<an
     };
 }
 
+export interface FormValidationEventSource {
+    type: "INIT" | "BLUR" | "CHANGE";
+    fieldName?: string;
+}
+
 /**
  * Updates the error state of each field in the form.
  * @param form The form to update
  * @param errors Current field error information.
  */
-export function formUpdateErrors<TForm>(form: Form<TForm>, errorMap: FieldErrorMap<TForm>): Form<TForm> {
+export function formUpdateErrors<TForm>(form: Form<TForm>, errorMap: FieldErrorMap<TForm>, source: FormValidationEventSource): Form<TForm> {
     let formValid = true;
     let formValidating = false;
     // Calculate new field/form meta
     const fields: Partial<FormFields<TForm>> = {};
     for (const name of keysOf(form.fields)) {
         const field = form.fields[name];
-        const error = errorMap[name];
-        const invalid = isFieldError(error);
+        const newError = errorMap[name];
+        const oldError = field.meta.error;
+        const invalid = isFieldError(newError);
+        const error = (
+            // New errors supercede everything
+            (invalid) ? newError :
+            // A CHANGE event on this field always resets the error
+            (source.type === "CHANGE" && source.fieldName === name) ? null :
+            // Otherwise, existing "sticky" errors are retained
+            (oldError && oldError.sticky) ? oldError : null
+        );
         // Note: the `validating` flag is set when validation begins and cleared only when
-        // receiving a concrete error or when `formCompleteAsyncError` fires
-        const validating = isAsyncFieldError(error)
-            ? true
-            : invalid ? false : field.meta.validating;
+        // receiving a concrete error or when `formCompleteAsyncError` fires (below)
+        const validating = (
+            isAsyncFieldError(newError)
+                ? true
+                : invalid ? false : field.meta.validating
+        );
         fields[name] = {
             ...field,
             meta: {
                 ...field.meta,
                 validating,
-                valid: invalid === false,
-                error: invalid ? error : null,
+                valid: !error,
+                error,
             },
         };
         if (invalid) {
@@ -216,17 +232,12 @@ export function formUpdateErrors<TForm>(form: Form<TForm>, errorMap: FieldErrorM
  * @param name The name of the field to update.
  * @param error The error to write to the field.
  */
-export function formCompleteAsyncError<TForm>(form: Form<TForm>, name: keyof TForm, error: FieldError | null) {
+export function formCompleteAsyncValidation<TForm>(form: Form<TForm>, name: keyof TForm, error: FieldError | null) {
     const field = form.fields[name];
     if (!field) {
         return form;
     }
-    // Local synchronous validation may have already written a new error.
-    // If so, we have to throw this asynchronous validation result away.
-    if (field.meta.error) {
-        return form;
-    }
-    // Calculate new field meta
+    // Calculate new field meta.
     const meta: FieldMeta = {
         ...field.meta,
         validating: false,

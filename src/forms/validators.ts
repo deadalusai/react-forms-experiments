@@ -1,4 +1,4 @@
-import { Form, FieldError, FieldErrorMap, keysOf } from "forms/core";
+import { Form, FormValidationEventSource, FieldError, FieldErrorMap, keysOf } from "forms/core";
 
 export type FormErrors<TForm> = {
     [key in keyof TForm]?: FieldError | Promise<FieldError | null>;
@@ -72,18 +72,30 @@ export function combineValidators<TValue>(validators: FieldValidator<TValue>[]):
     };
 }
 
+/**
+ * Ensures the validator only runs on BLUR events.
+ * The resulting error is automatically marked as `sticky` and will only be cleared
+ * by another error or a CHANGE event on the input.
+ * @param validator The validator to run on blur.
+ */
 export function onBlur<TValue>(validator: FieldValidator<TValue>): FieldValidator<TValue> {
-    return (value, info) => info.isBlurring ? validator(value, info) : null;
+    return (value, info) => {
+        const error = info.isBlurring ? validator(value, info) : null;
+        return (
+            isFieldErrorPromise(error) ? error.then(e => e ? { ...e, sticky: true } : null) :
+            isFieldError(error) ? { ...error, sticky: true } : null
+        );
+    };
 }
 
 // Async validation tracking
 
-function isFieldErrorPromise(e: any): e is Promise<FieldError> {
-    return typeof e === "object" && "then" in e;
+function isFieldErrorPromise(e: Promise<FieldError | null> | FieldError | null | undefined): e is Promise<FieldError | null> {
+    return e != null && typeof e === "object" && "then" in e;
 }
 
-function isFieldError(e: any): e is FieldError {
-    return typeof e === "object" && "error" in e;
+function isFieldError(e: Promise<FieldError | null> | FieldError | null | undefined): e is FieldError {
+    return e != null && typeof e === "object" && "error" in e;
 }
 
 const LISTENERS: { [formName: string]: (fieldName: string, error: FieldError | null) => void; } = {};
@@ -97,11 +109,12 @@ export function unregisterValidationListener(formName: string) {
 }
 
 let UUID = 0;
+const inProgressKey = (formName: string, fieldName: string) => `${formName}:${fieldName}`;
 const IN_PROGRESS: { [key: string]: number; } = {};
 
 function subscribe(formName: string, fieldName: string, promise: Promise<FieldError | null>): number {
+    const key = inProgressKey(formName, fieldName);
     const id = UUID++;
-    const key = `${formName}:${fieldName}`;
     IN_PROGRESS[key] = id;
     promise.then((error) => {
         if (IN_PROGRESS[key] !== id) {
@@ -117,15 +130,17 @@ function subscribe(formName: string, fieldName: string, promise: Promise<FieldEr
     return id;
 }
 
+function unsubscribe(formName: string, fieldName: string): void {
+    const key = inProgressKey(formName, fieldName);
+    if (key in IN_PROGRESS) {
+        delete IN_PROGRESS[key];
+    }
+}
+
 //
 // Validators
 //
 
-export interface FormValidationEventSource {
-    type: "INIT" | "BLUR" | "CHANGE";
-    fieldName?: string;
-}
-1
 /**
  * Applies the validator function to the given form - any asynchronous validation results
  * are subscribed to automatically. Results are published via the `registerValidationListener` callbacks.
@@ -151,6 +166,8 @@ export function formApplyValidator<TForm>(form: Form<TForm>, validator: FormVali
             formErrors[name] = { id }; 
         }
         else if (isFieldError(error)) {
+            // Clear any async validation listeners
+            unsubscribe(form.name, name as string);
             formErrors[name] = error;
         }
     }
@@ -158,7 +175,7 @@ export function formApplyValidator<TForm>(form: Form<TForm>, validator: FormVali
 }
 
 export function required(error = "ERROR.REQUIRED"): FieldValidator {
-    return value => value === null || value === undefined || value === "" ? { error, params: { value } } : null;
+    return value => !value ? { error, params: { value } } : null;
 }
 
 export function number(error = "ERROR.MUST_BE_A_NUMBER"): FieldValidator {

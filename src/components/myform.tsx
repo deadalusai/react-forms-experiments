@@ -11,7 +11,7 @@ import { InputContainer, TextInput, SelectInput, MultiSelectInput, RadioInput, C
 
 const FORM_NAME = "my-form";
 
-enum FooType { foo1, foo2, foo3 };
+enum FooType { foo1 = 1, foo2 = 2, foo3 = 3 };
 enum BarType { bar1 = "first", bar2 = "second", bar3 = "third" };
 enum BazType { baz1 = "aaa", baz2 = "bbb", baz3 = "ccc" }
 

@@ -2,7 +2,7 @@ import * as React from "react";
 import { connect } from "react-redux";
 
 import * as FormsStore from "forms/store";
-import { Form, FormUpdate, FieldUpdate, formInit, formUpdate, formUpdateField, formUpdateErrors, formCompleteAsyncError } from "forms/core";
+import { Form, FormUpdate, FieldUpdate, formInit, formUpdate, formUpdateField, formUpdateErrors, formCompleteAsyncValidation, FormValidationEventSource } from "forms/core";
 import { FormValidator } from 'forms';
 import { formApplyValidator, registerValidationListener, unregisterValidationListener } from './validators';
 
@@ -31,7 +31,7 @@ function lift<TForm, TOwnProps>(
         public componentWillMount() {
             registerValidationListener(options.name, (fieldName, error) => {
                 let form = this.get();
-                form = formCompleteAsyncError(form, fieldName as keyof TForm, error);
+                form = formCompleteAsyncValidation(form, fieldName as keyof TForm, error);
                 this.store(form);
             });
             if (options.initial) {
@@ -51,8 +51,9 @@ function lift<TForm, TOwnProps>(
         public formInit(initial: TForm) {
             let form = formInit<TForm>(options.name, initial);
             if (options.validator) {
-                const errors = formApplyValidator(form, options.validator, { type: "INIT" });
-                form = formUpdateErrors(form, errors);
+                const source: FormValidationEventSource = { type: "INIT" };
+                const errors = formApplyValidator(form, options.validator, source);
+                form = formUpdateErrors(form, errors, source);
             }
             this.store(form);
         }
@@ -67,9 +68,9 @@ function lift<TForm, TOwnProps>(
                 form = formUpdateField(form, update);
                 // Apply validation only on change and blur events
                 if (options.validator && (update.source === "CHANGE" || update.source === "BLUR")) {
-                    const source = { type: update.source, fieldName: update.name as string };
+                    const source: FormValidationEventSource = { type: update.source, fieldName: update.name as string };
                     const errors = formApplyValidator(form, options.validator, source);
-                    form = formUpdateErrors(form, errors);
+                    form = formUpdateErrors(form, errors, source);
                 }
             }
             else {
