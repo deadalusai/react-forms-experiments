@@ -3,25 +3,29 @@
 //
 
 export interface FieldError {
+    /** An error identifier or resource code */
     error: string;
+    /** Format parameters for the error */
     params?: any;
+    /** If set, this error will only be cleared by another error or a CHANGE event on the field. */
     sticky?: true;
 }
 
-export interface AsyncFieldError {
-    id: number;
+/** Represents an asynchronous validation operation in progress */
+export interface AsyncValidationMarker {
+    async: number;
 }
 
-function isFieldError(e: any): e is FieldError {
-    return typeof e === "object" && "error" in e;
+function isFieldError(e: FieldError | AsyncValidationMarker | undefined): e is FieldError {
+    return e != null && typeof e === "object" && "error" in e;
 }
 
-function isAsyncFieldError(e: any): e is AsyncFieldError {
-    return typeof e === "object" && "id" in e;
+function isAsyncValidationMarker(e: FieldError | AsyncValidationMarker | undefined): e is AsyncValidationMarker {
+    return e != null && typeof e === "object" && "async" in e;
 }
 
 export type FieldErrorMap<TForm = any> = {
-    [TKey in keyof TForm]?: FieldError | AsyncFieldError;
+    [TKey in keyof TForm]?: FieldError | AsyncValidationMarker;
 };
 
 export interface FieldMeta {
@@ -192,10 +196,10 @@ export function formUpdateErrors<TForm>(form: Form<TForm>, errorMap: FieldErrorM
             // Otherwise, existing "sticky" errors are retained
             (oldError && oldError.sticky) ? oldError : null
         );
-        // Note: the `validating` flag is set when validation begins and cleared only when
-        // receiving a concrete error or when `formCompleteAsyncError` fires (below)
+        // The `validating` flag is set when async validation begins and cleared only when
+        // receiving a concrete error or by `formCompleteAsyncValidation`
         const validating = (
-            isAsyncFieldError(newError)
+            isAsyncValidationMarker(newError)
                 ? true
                 : invalid ? false : field.meta.validating
         );

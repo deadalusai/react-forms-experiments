@@ -114,7 +114,7 @@ const IN_PROGRESS: { [key: string]: number; } = {};
 
 function subscribe(formName: string, fieldName: string, promise: Promise<FieldError | null>): number {
     const key = inProgressKey(formName, fieldName);
-    const id = UUID++;
+    const id = ++UUID;
     IN_PROGRESS[key] = id;
     promise.then((error) => {
         if (IN_PROGRESS[key] !== id) {
@@ -163,7 +163,7 @@ export function formApplyValidator<TForm>(form: Form<TForm>, validator: FormVali
         if (isFieldErrorPromise(error)) {
             // Start listening to the validator
             const id = subscribe(form.name, name as string, error);
-            formErrors[name] = { id }; 
+            formErrors[name] = { async: id }; 
         }
         else if (isFieldError(error)) {
             // Clear any async validation listeners
