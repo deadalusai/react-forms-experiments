@@ -192,21 +192,8 @@ export class MyFormView extends React.Component<MyFormViewProps> {
                         all fields {form.meta.disabled ? "enable" : "disable"}
                     </button>
                 </section>
-                <section>
-                    {keysOf(form.fields).map(name => {
-                        const { meta } = form.fields[name];
-                        return (
-                            <button key={name} type="button" onClick={() => formUpdate({ name, validating: !meta.validating })}>
-                                {name} {meta.validating ? "normal" : "validating"}
-                            </button>
-                        );
-                    })}
-                    <button type="button" onClick={() => formUpdate({ validating: !form.meta.validating })}>
-                        all fields {form.meta.validating ? "normal" : "validating"}
-                    </button>
-                </section>
                 <pre>
-                    form: {JSON.stringify(form.meta, null, 4)}
+                    form: {JSON.stringify(form, null, 4)}
                 </pre>
             </section>
         );

@@ -14,10 +14,10 @@ export type FieldValidator<TValue = any> = (value: TValue, info: FieldValidation
 
 export interface FormValidationInfo {
     focused: string | null;
-    blurred: string | null;
+    blurring: string | null;
 }
 
-export type FormValidator<TForm = any> = (form: TForm, info: FormValidationInfo) => FormErrors<TForm>;
+export type FormValidator<TForm = any> = (form: TForm, source: FormValidationInfo) => FormErrors<TForm>;
 
 export type FieldValidatorMap<TForm = any> = {
     [TKey in keyof TForm]?: FieldValidator<TForm[TKey]> | FieldValidator<TForm[TKey]>[];
@@ -42,7 +42,7 @@ export function createFormValidator<TForm>(fieldValidators: FieldValidatorMap<TF
                 const fieldInfo: FieldValidationInfo = {
                     name: name as string,
                     isFocused: info.focused === name,
-                    isBlurring: info.blurred === name,
+                    isBlurring: info.blurring === name,
                 };
                 const error = validator(form[name], fieldInfo);
                 if (error) {
@@ -121,6 +121,11 @@ function subscribe(formName: string, fieldName: string, promise: Promise<FieldEr
 // Validators
 //
 
+export interface FormValidationEventSource {
+    type: "INIT" | "BLUR" | "CHANGE";
+    fieldName?: string;
+}
+1
 /**
  * Applies the validator function to the given form - any asynchronous validation results
  * are subscribed to automatically. Results are published via the `registerValidationListener` callbacks.
@@ -129,11 +134,11 @@ function subscribe(formName: string, fieldName: string, promise: Promise<FieldEr
  * @param validator The validator function to apply.
  * @returns A map of field errors which can be written back into the form state.
  */
-export function formApplyValidator<TForm>(form: Form<TForm>, validator: FormValidator<TForm>): FieldErrorMap<TForm> {
+export function formApplyValidator<TForm>(form: Form<TForm>, validator: FormValidator<TForm>, source: FormValidationEventSource): FieldErrorMap<TForm> {
     // Validate the form
     const info: FormValidationInfo = {
         focused: form.meta.focused,
-        blurred: form.meta.blurred,
+        blurring: source.type === "BLUR" && source.fieldName || null,
     };
     const rawErrors = validator(form.current, info);
     // Convert the errors into something we can store

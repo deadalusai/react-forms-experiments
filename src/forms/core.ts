@@ -41,8 +41,7 @@ export interface FormMeta {
     readonly dirty: boolean;
     readonly disabled: boolean;
     readonly validating: boolean;
-    readonly focused: string | null; // The field which currently holds focus
-    readonly blurred: string | null; // The field which just blurred
+    readonly focused: string | null; // The name of the field which currently holds focus
 }
 
 export type Field<TValue = any, TKey = any> = {
@@ -104,18 +103,15 @@ export function formInit<TForm>(name: string, initial: TForm): Form<TForm> {
             dirty: false,
             disabled: false,
             focused: null,
-            blurred: null,
         },
     };
 }
 
 export type FieldUpdate<TValue = any, TForm = any> = {
     name: keyof TForm,
-    value?: TValue;
-    visited?: boolean;
-    touched?: boolean;
-    focused?: boolean;
-    disabled?: boolean;
+    source?: "FOCUS" | "BLUR" | "CHANGE",
+    value?: TValue,
+    disabled?: boolean,
 };
 
 /**
@@ -124,51 +120,45 @@ export type FieldUpdate<TValue = any, TForm = any> = {
  * @param form The form to update
  * @param updates A list of field updates to apply.
  */
-export function formUpdateFields<TForm>(form: Form<TForm>, updates: FieldUpdate<any, TForm>[]): Form<TForm> {
-    const newValues: Partial<TForm> = {};
-    const newFields: Partial<FormFields<TForm>> = {};
-    for (const update of updates) {
-        const name = update.name;
-        const field = form.fields[name];
-        if (!field) {
-            continue;
-        }
-        const value = "value" in update ? update.value! : field.value;
-        // Calculate new field meta
-        const meta: FieldMeta = {
-            ...field.meta,
-            touched: "touched" in update ? update.touched! : field.meta.touched,
-            focused: "focused" in update ? update.focused! : field.meta.focused,
-            visited: "visited" in update ? update.visited! : field.meta.visited,
-            disabled: "disabled" in update ? update.disabled! : field.meta.disabled,
-            dirty: value != form.initial[name],
-        };
-        newValues[name] = value;
-        newFields[name] = { name, value, meta };
+export function formUpdateField<TForm>(form: Form<TForm>, update: FieldUpdate<any, TForm>): Form<TForm> {
+    const name = update.name;
+    const field = form.fields[update.name];
+    if (!field) {
+        return form;
     }
-    const metaFor = (fieldName: keyof TForm) => ((newFields[fieldName] as any) || form.fields[fieldName]).meta;
+    const value = "value" in update ? update.value! : field.value;
+    // Calculate new field metadata
+    const meta: FieldMeta = {
+        ...field.meta,
+        touched: field.meta.touched || update.source === "CHANGE",
+        visited: field.meta.visited || update.source === "BLUR",
+        focused: (
+            update.source === "FOCUS" ? true :
+            update.source === "BLUR" ? false : field.meta.focused
+        ),
+        disabled: "disabled" in update ? update.disabled! : field.meta.disabled,
+        dirty: value != form.initial[name],
+    };
+    console.log(name, value, meta);
+    // Calculate new form metadata
+    const metaFor = (fieldName: keyof TForm) => fieldName === name ? meta : form.fields[fieldName].meta;
     const names = keysOf(form.fields);
-    // Determine which fields just gained/lost focused
-    const focused = names.find((name) => metaFor(name).focused) as string || null;
-    const blurred = (focused !== form.meta.focused && form.meta.focused !== null) ? form.meta.focused : form.meta.blurred;
-    // Calculate new form meta
     const formMeta: FormMeta = {
         ...form.meta,
-        touched: names.reduce((touched, name) => touched || metaFor(name).touched, false),
-        dirty: names.reduce((dirty, name) => dirty || metaFor(name).dirty, false),
-        disabled: names.reduce((disabled, name) => disabled && metaFor(name).disabled, false),
-        blurred,
-        focused,
+        touched: names.reduce((touched, name) => touched || metaFor(name).touched, false as boolean),
+        dirty: names.reduce((dirty, name) => dirty || metaFor(name).dirty, false as boolean),
+        disabled: names.reduce((disabled, name) => disabled && metaFor(name).disabled, false as boolean),
+        focused: names.find((name) => metaFor(name).focused) as string || null,
     };
     return {
         ...form,
         current: {
             ...form.current,
-            ...newValues,
+            [name]: value,
         },
         fields: {
             ...form.fields,
-            ...newFields,
+            [name]: { ...field, value, meta }
         },
         meta: formMeta,
     };
@@ -187,21 +177,25 @@ export function formUpdateErrors<TForm>(form: Form<TForm>, errorMap: FieldErrorM
     for (const name of keysOf(form.fields)) {
         const field = form.fields[name];
         const error = errorMap[name];
-        const isAsync = isAsyncFieldError(error);
-        const isError = isFieldError(error);
+        const invalid = isFieldError(error);
+        // Note: the `validating` flag is set when validation begins and cleared only when
+        // receiving a concrete error or when `formCompleteAsyncError` fires
+        const validating = isAsyncFieldError(error)
+            ? true
+            : invalid ? false : field.meta.validating;
         fields[name] = {
             ...field,
             meta: {
                 ...field.meta,
-                validating: isAsync,
-                valid: isError === false,
-                error: isError ? error : null,
+                validating,
+                valid: invalid === false,
+                error: invalid ? error : null,
             },
         };
-        if (isError) {
+        if (invalid) {
             formValid = false;
         }
-        if (isAsync) {
+        if (validating) {
             formValidating = true;
         }
     }
@@ -261,10 +255,8 @@ export function formCompleteAsyncError<TForm>(form: Form<TForm>, name: keyof TFo
 }
 
 export interface FormUpdate {
-    visited?: boolean;
     touched?: boolean;
     disabled?: boolean;
-    validating?: boolean;
 }
 
 /**
@@ -281,7 +273,8 @@ export function formUpdate<TForm>(form: Form<TForm>, update: FormUpdate): Form<T
             ...field,
             meta: {
                 ...field.meta,
-                ...update
+                touched: "touched" in update ? update.touched! : field.meta.touched,
+                disabled: "disabled" in update ? update.disabled! : field.meta.disabled,
             }
         };
     }
@@ -289,7 +282,8 @@ export function formUpdate<TForm>(form: Form<TForm>, update: FormUpdate): Form<T
         ...form,
         meta: {
             ...form.meta,
-            ...update
+            touched: "touched" in update ? update.touched! : form.meta.touched,
+            disabled: "disabled" in update ? update.disabled! : form.meta.disabled,
         },
         fields: fields as FormFields<TForm>,
     };
