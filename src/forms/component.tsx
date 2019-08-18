@@ -2,15 +2,9 @@ import * as React from "react";
 import { connect } from "react-redux";
 
 import * as FormsStore from "forms/store";
-import { Form, FormUpdate, FieldUpdate, formInit, formUpdate, formUpdateField, formUpdateErrors, formCompleteAsyncValidation, FormValidationEventSource } from "forms/core";
+import { Form, FormUpdate, FieldUpdate, formInit, formUpdateAll, formUpdateField, formUpdateErrors, formCompleteAsyncValidation, FormValidationEventSource } from "forms/core";
 import { FormValidator } from 'forms';
 import { formApplyValidator, registerValidationListener, unregisterValidationListener } from './validators';
-
-export interface FormComponentProps<TForm = any> {
-    form: Form<TForm>;
-    formInit: (initial: TForm) => void;
-    formUpdate: (update: FormUpdate | FieldUpdate<TForm>) => void;
-}
 
 export interface FormOptions<TForm> {
     /** The name of the form, global to the app */
@@ -21,92 +15,64 @@ export interface FormOptions<TForm> {
     initial?: TForm;
 }
 
-function lift<TForm, TOwnProps>(
-    ComponentClass: React.ComponentClass<TOwnProps>,
-    useState: () => [Form<TForm> | undefined, (newState: Form<TForm>) => void],
-    options: FormOptions<TForm>,
-) {
-    class FormComponent extends React.Component<TOwnProps> {
+export interface FormComponentProps<TForm = any> {
+    form: Form<TForm>;
+    formInit: (initial: TForm) => void;
+    formUpdate: (update: FormUpdate | FieldUpdate<TForm>) => void;
+}
 
-        public componentWillMount() {
-            registerValidationListener(options.name, (fieldName, error) => {
-                let form = this.get();
-                form = formCompleteAsyncValidation(form, fieldName as keyof TForm, error);
-                this.store(form);
-            });
-            if (options.initial) {
-                this.formInit(options.initial);
-            }
+abstract class FormComponentBase<TForm, TOwnProps, TState = {}> extends React.Component<TOwnProps, TState> {
+    
+    public abstract options: FormOptions<TForm>;
+
+    public componentDidMount() {
+        registerValidationListener(this.options.name, (fieldName, error) => {
+            let form = this.get();
+            form = formCompleteAsyncValidation(form, fieldName as keyof TForm, error);
+            this.set(form);
+        });
+    }
+
+    public componentWillUnmount() {
+        unregisterValidationListener(this.options.name);
+    }
+
+    public abstract get(): Form<TForm>;
+    public abstract set(form: Form<TForm>): void;
+
+    public formInit(initial: TForm): Form<TForm> {
+        let form = formInit<TForm>(this.options.name, initial);
+        if (this.options.validator) {
+            const source: FormValidationEventSource = { type: "INIT" };
+            const errors = formApplyValidator(form, this.options.validator, source);
+            form = formUpdateErrors(form, errors, source);
         }
+        return form;
+    }
 
-        public componentWillUnmount() {
-            unregisterValidationListener(options.name);
+    public formUpdate(update: FormUpdate | FieldUpdate<TForm>): Form<TForm> {
+        let form = this.get();
+        if (!form) {
+            throw new Error("Called formUpdate before formInit");
         }
-
-        public componentWillReceiveProps() {
-            const state = useState()[0];
-            this.form = state!;
-        }
-
-        public formInit(initial: TForm) {
-            let form = formInit<TForm>(options.name, initial);
-            if (options.validator) {
-                const source: FormValidationEventSource = { type: "INIT" };
-                const errors = formApplyValidator(form, options.validator, source);
+        if ("name" in update) {
+            // Field update
+            form = formUpdateField(form, update);
+            // Apply validation only on change and blur events
+            if (this.options.validator && (update.source === "CHANGE" || update.source === "BLUR")) {
+                const source: FormValidationEventSource = { type: update.source, fieldName: update.name as string };
+                const errors = formApplyValidator(form, this.options.validator, source);
                 form = formUpdateErrors(form, errors, source);
             }
-            this.store(form);
         }
-
-        public formUpdate(update: FormUpdate | FieldUpdate<TForm>) {
-            let form = this.get();
-            if (!form) {
-                throw new Error("Called formUpdate before formInit");
-            }
-            if ("name" in update) {
-                // Field update
-                form = formUpdateField(form, update);
-                // Apply validation only on change and blur events
-                if (options.validator && (update.source === "CHANGE" || update.source === "BLUR")) {
-                    const source: FormValidationEventSource = { type: update.source, fieldName: update.name as string };
-                    const errors = formApplyValidator(form, options.validator, source);
-                    form = formUpdateErrors(form, errors, source);
-                }
-            }
-            else {
-                // Form-wide meta update
-                form = formUpdate(form, update);
-            }
-            this.store(form);
+        else {
+            // Form-wide meta update
+            form = formUpdateAll(form, update);
         }
+        return form;
+    }
 
-        private form: Form<TForm> = null as any;
-
-        public get(): Form<TForm> {
-            return this.form;
-        }
-
-        public store(form: Form<TForm>) {
-            const setState = useState()[1];
-            this.form = form;
-            setState(form);
-        }
-
-        public render() {
-            const formProps: FormComponentProps<TForm> = {
-                form: this.get(),
-                formInit: this.formInit.bind(this),
-                formUpdate: this.formUpdate.bind(this),
-            };
-            return (
-                <ComponentClass
-                    {...this.props}
-                    {...formProps} />
-            );
-        }
-    };
-
-    return FormComponent;
+    public abstract render(): React.ReactNode;
 }
 
 /**
@@ -116,7 +82,42 @@ function lift<TForm, TOwnProps>(
  */
 export function injectStateBackedForm<TForm = any, TOwnProps = {}>(options: FormOptions<TForm>) {
     return (WrappedComponent: React.ComponentClass<TOwnProps & FormComponentProps<TForm>>) => {
-        return lift(WrappedComponent, React.useState, options);
+        interface IState {
+            form: Form<TForm>;
+        }
+        class FormComponent extends FormComponentBase<TForm, TOwnProps, IState> {
+            public options = options;
+
+            constructor(props: any) {
+                super(props);
+                if (this.options.initial) {
+                    const form = this.formInit(this.options.initial);
+                    this.state = { form };
+                }
+            }
+
+            public get(): Form<TForm> {
+                return this.state.form;
+            }
+
+            public set(form: Form<TForm>): void {
+                this.setState({ form });
+            }
+
+            public render(): React.ReactNode {
+                const formProps: FormComponentProps<TForm> = {
+                    form: this.get(),
+                    formInit: (init) => this.set(this.formInit(init)),
+                    formUpdate: (form) => this.set(this.formUpdate(form)),
+                };
+                return (
+                    <WrappedComponent
+                        {...this.props}
+                        {...formProps} />
+                );
+            }
+        }
+        return FormComponent;
     };
 }
 
@@ -127,25 +128,51 @@ export function injectStateBackedForm<TForm = any, TOwnProps = {}>(options: Form
  */
 export function injectStoreBackedForm<TForm = any, TOwnProps = {}>(options: FormOptions<TForm>) {
     return (WrappedComponent: React.ComponentClass<TOwnProps & FormComponentProps<TForm>>) => {
-        // Mock the `useState` API to be backed by the redux store
-        let state: Form<TForm>;
-        let setState: (newState: Form<TForm>) => void;
-        interface StoreProps {
+        interface IStoreProps {
             form: Form<TForm>;
         }
-        const connector = connect<StoreProps, any, TOwnProps, any>(
-            (rootState) => {
-                state = rootState["forms"][options.name];
-                return { form: state };
-            },
-            (dispatch) => {
-                setState = (newState) => {
-                    dispatch(FormsStore.actions.updateForm(newState));
+        interface IActionProps {
+            formUpdate: typeof FormsStore.actions.updateForm;
+        }
+        class FormComponent extends FormComponentBase<TForm, IStoreProps & IActionProps & TOwnProps> {
+            public options = options;
+
+            public get(): Form<TForm> {
+                return this.props.form;
+            }
+            
+            public set(form: Form<TForm>): void {
+                this.props.formUpdate(form);
+            }
+
+            public render(): React.ReactNode {
+                let form = this.get();
+                // Hack: Initialise the form store for the first time (triggers a re-render)
+                if (options.initial && !form) {
+                    form = this.formInit(options.initial);
+                    this.set(form);
+                }
+                const formProps: FormComponentProps<TForm> = {
+                    form,
+                    formInit: (init) => this.set(this.formInit(init)),
+                    formUpdate: (form) => this.set(this.formUpdate(form)),
                 };
+                return (
+                    <WrappedComponent
+                        {...this.props}
+                        {...formProps} />
+                );
+            }
+        }
+        const connector = connect<IStoreProps, IActionProps, TOwnProps, any>(
+            (rootState) => {
+                const form = rootState["forms"][options.name];
+                return { form };
+            },
+            {
+                formUpdate: FormsStore.actions.updateForm,
             }
         );
-        const lifted = lift(WrappedComponent, () => [state, setState], options);
-        // HACK: Not sure why this type is not assignable as-is
-        return connector(lifted as any);
+        return connector(FormComponent as any);
     };
 }
