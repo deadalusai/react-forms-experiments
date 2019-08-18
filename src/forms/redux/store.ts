@@ -1,5 +1,5 @@
 import { ActionsFrom } from "util";
-import { Form } from "forms";
+import { Form } from "../core";
 
 //
 // State

@@ -14,6 +14,5 @@ export {
 } from "forms/validators";
 export {
     FormComponentProps,
-    injectStoreBackedForm,
     injectStateBackedForm
 } from "forms/component";

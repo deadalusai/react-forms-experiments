@@ -1,7 +1,5 @@
 import * as React from "react";
-import { connect } from "react-redux";
 
-import * as FormsStore from "forms/store";
 import { Form, FormUpdate, FieldUpdate, formInit, formUpdateAll, formUpdateField, formUpdateErrors, formCompleteAsyncValidation, FormValidationEventSource } from "forms/core";
 import { FormValidator } from 'forms';
 import { formApplyValidator, registerValidationListener, unregisterValidationListener } from './validators';
@@ -21,7 +19,7 @@ export interface FormComponentProps<TForm = any> {
     formUpdate: (update: FormUpdate | FieldUpdate<TForm>) => void;
 }
 
-abstract class FormComponentBase<TForm, TOwnProps, TState = {}> extends React.Component<TOwnProps, TState> {
+export abstract class FormComponentBase<TForm, TOwnProps, TState = {}> extends React.Component<TOwnProps, TState> {
     
     public abstract options: FormOptions<TForm>;
 
@@ -121,58 +119,3 @@ export function injectStateBackedForm<TForm = any, TOwnProps = {}>(options: Form
     };
 }
 
-/**
- * Higher-order component which provides a redux-backed FormComponentProps implementation
- *
- * @param options Configuration options for the form.
- */
-export function injectStoreBackedForm<TForm = any, TOwnProps = {}>(options: FormOptions<TForm>) {
-    return (WrappedComponent: React.ComponentClass<TOwnProps & FormComponentProps<TForm>>) => {
-        interface IStoreProps {
-            form: Form<TForm>;
-        }
-        interface IActionProps {
-            formUpdate: typeof FormsStore.actions.updateForm;
-        }
-        class FormComponent extends FormComponentBase<TForm, IStoreProps & IActionProps & TOwnProps> {
-            public options = options;
-
-            public get(): Form<TForm> {
-                return this.props.form;
-            }
-            
-            public set(form: Form<TForm>): void {
-                this.props.formUpdate(form);
-            }
-
-            public render(): React.ReactNode {
-                let form = this.get();
-                // Hack: Initialise the form store for the first time (triggers a re-render)
-                if (options.initial && !form) {
-                    form = this.formInit(options.initial);
-                    this.set(form);
-                }
-                const formProps: FormComponentProps<TForm> = {
-                    form,
-                    formInit: (init) => this.set(this.formInit(init)),
-                    formUpdate: (form) => this.set(this.formUpdate(form)),
-                };
-                return (
-                    <WrappedComponent
-                        {...this.props}
-                        {...formProps} />
-                );
-            }
-        }
-        const connector = connect<IStoreProps, IActionProps, TOwnProps, any>(
-            (rootState) => {
-                const form = rootState["forms"][options.name];
-                return { form };
-            },
-            {
-                formUpdate: FormsStore.actions.updateForm,
-            }
-        );
-        return connector(FormComponent as any);
-    };
-}

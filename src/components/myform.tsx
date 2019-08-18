@@ -4,7 +4,8 @@ import { compose } from "redux";
 
 import { delayMs } from "util";
 import { RootState } from "store";
-import { Form, FormComponentProps, injectStoreBackedForm } from "forms";
+import { Form } from "forms";
+import { FormComponentProps, injectStoreBackedForm } from "forms/redux";
 import * as Validators from "forms/validators";
 import { keysOf } from "forms/core";
 import { InputContainer, TextInput, SelectInput, MultiSelectInput, RadioInput, CheckboxInput } from "forms/controls";
