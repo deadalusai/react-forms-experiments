@@ -201,7 +201,7 @@ export class MyFormView extends React.Component<MyFormViewProps> {
 
     public submit(form: Form<MyForm>) {
         if (!form.meta.valid || form.meta.validating) {
-            this.props.formUpdate({ touched: true });
+            this.props.formUpdate({ visited: true });
             return;
         }
         const json = JSON.stringify(form.current, null, 4);

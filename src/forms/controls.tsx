@@ -35,7 +35,6 @@ export interface InputContainerProps {
     children: any;
 }
 export function InputContainer({ className, label, field, children }: InputContainerProps) {
-    const { touched, visited, error } = field.meta;
     className = classString(
         "input-container",
         field.meta.disabled && "input-container--disabled",
@@ -45,6 +44,7 @@ export function InputContainer({ className, label, field, children }: InputConta
         field.meta.dirty ? "input-container--dirty" : "input-container--pristine",
         className
     );
+    const { visited, error } = field.meta;
     return (
         <div className={className}>
             <label className="input-container--label" htmlFor={field.name}>
@@ -52,7 +52,7 @@ export function InputContainer({ className, label, field, children }: InputConta
                 {field.meta.validating && " ⏳"}
             </label>
             {children}
-            {(touched || visited) && error && <ErrorMessage error={error} />}
+            {visited && error && <ErrorMessage error={error} />}
         </div>
     );
 }

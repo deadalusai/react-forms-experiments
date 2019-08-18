@@ -272,6 +272,7 @@ export function formCompleteAsyncValidation<TForm>(form: Form<TForm>, name: keyo
 export interface FormUpdate {
     touched?: boolean;
     disabled?: boolean;
+    visited?: boolean;
 }
 
 /**
@@ -279,7 +280,7 @@ export interface FormUpdate {
  * @param form The form to update.
  * @param update The update to apply.
  */
-export function formUpdate<TForm>(form: Form<TForm>, update: FormUpdate): Form<TForm> {
+export function formUpdateAll<TForm>(form: Form<TForm>, update: FormUpdate): Form<TForm> {
     // Touch all fields in the form
     const fields: Partial<FormFields<TForm>> = {};
     for (const name of keysOf(form.fields)) {
@@ -290,6 +291,7 @@ export function formUpdate<TForm>(form: Form<TForm>, update: FormUpdate): Form<T
                 ...field.meta,
                 touched: "touched" in update ? update.touched! : field.meta.touched,
                 disabled: "disabled" in update ? update.disabled! : field.meta.disabled,
+                visited: "visited" in update ? update.visited! : field.meta.visited,
             }
         };
     }
@@ -299,6 +301,7 @@ export function formUpdate<TForm>(form: Form<TForm>, update: FormUpdate): Form<T
             ...form.meta,
             touched: "touched" in update ? update.touched! : form.meta.touched,
             disabled: "disabled" in update ? update.disabled! : form.meta.disabled,
+            visited: "visited" in update ? update.visited! : form.meta.visited,
         },
         fields: fields as FormFields<TForm>,
     };
