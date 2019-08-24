@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { FieldError, Field, FieldUpdate } from "forms/core";
+import { Field, FieldUpdate, FieldError } from "forms/core";
 
 //
 // Utility components and functions
@@ -37,10 +37,10 @@ export interface InputContainerProps {
 export function InputContainer({ className, label, field, children }: InputContainerProps) {
     className = classString(
         "input-container",
-        field.meta.disabled && "input-container--disabled",
         field.meta.focused && "input-container--focused",
         field.meta.touched && "input-container--touched",
-        field.meta.validating && "input-container--validating",
+        field.meta.visited && "input-container--visited",
+        field.meta.valid ? "input-container--valid" : "input-container--invalid",
         field.meta.dirty ? "input-container--dirty" : "input-container--pristine",
         className
     );
@@ -49,7 +49,6 @@ export function InputContainer({ className, label, field, children }: InputConta
         <div className={className}>
             <label className="input-container--label" htmlFor={field.name}>
                 {label || field.name}
-                {field.meta.validating && " ⏳"}
             </label>
             {children}
             {visited && error && <ErrorMessage error={error} />}
@@ -63,19 +62,20 @@ export function InputContainer({ className, label, field, children }: InputConta
 
 export interface TextInputProps {
     className?: string;
+    disabled?: boolean;
     field: Field<string>;
     fieldUpdate: (update: FieldUpdate<string>) => void;
     onChange?: (value: string) => void;
     onFocus?: () => void;
     onBlur?: () => void;
 }
-export function TextInput({ className, field, fieldUpdate, onChange, onFocus, onBlur }: TextInputProps) {
+export function TextInput({ className, disabled, field, fieldUpdate, onChange, onFocus, onBlur }: TextInputProps) {
     return (
         <input
             className={classString("input--text", className)}
             name={name}
             type="text"
-            disabled={field.meta.disabled}
+            disabled={disabled}
             value={field.value}
             onFocus={() => {
                 fieldUpdate({ name: field.name, source: "FOCUS" });
@@ -114,6 +114,7 @@ export interface SelectInputOption {
 
 export interface SelectInputProps {
     className?: string;
+    disabled?: boolean;
     field: Field;
     fieldUpdate: (update: FieldUpdate) => void;
     onChange?: (value: any) => void;
@@ -121,13 +122,13 @@ export interface SelectInputProps {
     onBlur?: () => void;
     options: SelectInputOption[];
 }
-export function SelectInput({ className, field, fieldUpdate, onFocus, onBlur, onChange, options }: SelectInputProps) {
+export function SelectInput({ className, disabled, field, fieldUpdate, onFocus, onBlur, onChange, options }: SelectInputProps) {
     return (
         <select
             className={classString("input--select", className)}
             name={field.name}
             value={getOptionId(options, field.value)}
-            disabled={field.meta.disabled}
+            disabled={disabled}
             onFocus={() => {
                 fieldUpdate({ name: field.name, source: "FOCUS" });
                 onFocus && onFocus();
@@ -167,6 +168,7 @@ function getSelectedValues(options: SelectInputOption[], selectedOptions: HTMLCo
 
 export interface MultiSelectInputProps {
     className?: string;
+    disabled?: boolean;
     field: Field<any[]>;
     fieldUpdate: (update: FieldUpdate<any[]>) => void;
     onChange?: (value: any[]) => void;
@@ -174,13 +176,13 @@ export interface MultiSelectInputProps {
     onBlur?: () => void;
     options: SelectInputOption[];
 }
-export function MultiSelectInput({ className, field, fieldUpdate, onFocus, onBlur, onChange, options }: MultiSelectInputProps) {
+export function MultiSelectInput({ className, disabled, field, fieldUpdate, onFocus, onBlur, onChange, options }: MultiSelectInputProps) {
     return (
         <select
             className={classString("input--multi-select", className)}
             name={field.name}
             value={field.value.map(v => getOptionId(options, v))}
-            disabled={field.meta.disabled}
+            disabled={disabled}
             multiple={true}
             onFocus={() => {
                 fieldUpdate({ name: field.name, source: "FOCUS" });
@@ -210,6 +212,7 @@ export function MultiSelectInput({ className, field, fieldUpdate, onFocus, onBlu
 
 export interface RadioInputProps {
     className?: string,
+    disabled?: boolean;
     label?: React.ReactNode;
     value: any;
     field: Field;
@@ -218,14 +221,14 @@ export interface RadioInputProps {
     onFocus?: () => void;
     onBlur?: () => void;
 }
-export function RadioInput({ className, label, value, field, fieldUpdate, onFocus, onBlur, onChange }: RadioInputProps) {
+export function RadioInput({ className, disabled, label, value, field, fieldUpdate, onFocus, onBlur, onChange }: RadioInputProps) {
     return (
         <label className="radio-item">
             <input
                 className={classString("input--radio", className)}
                 type="radio"
                 name={field.name}
-                disabled={field.meta.disabled}
+                disabled={disabled}
                 checked={value === field.value}
                 onFocus={() => {
                     fieldUpdate({ name: field.name, source: "FOCUS" });
@@ -250,6 +253,7 @@ export function RadioInput({ className, label, value, field, fieldUpdate, onFocu
 
 export interface CheckboxInputProps {
     className?: string;
+    disabled?: boolean;
     label?: React.ReactNode;
     values?: { checked: any, unchecked: any };
     field: Field;
@@ -258,7 +262,7 @@ export interface CheckboxInputProps {
     onFocus?: () => void;
     onBlur?: () => void;
 }
-export function CheckboxInput({ className, label, values, field, fieldUpdate, onFocus, onBlur, onChange }: CheckboxInputProps) {
+export function CheckboxInput({ className, disabled, label, values, field, fieldUpdate, onFocus, onBlur, onChange }: CheckboxInputProps) {
     // If no "checked/unchecked" values are provided fall back to a true/false flipflop
     const { checked: checkedValue, unchecked: uncheckedValue } = values || { checked: true, unchecked: false };
     const isChecked = field.value === checkedValue;
@@ -268,7 +272,7 @@ export function CheckboxInput({ className, label, values, field, fieldUpdate, on
                 className={classString("input--checkbox", className)}
                 type="checkbox"
                 name={field.name}
-                disabled={field.meta.disabled}
+                disabled={disabled}
                 checked={isChecked}
                 onFocus={() => {
                     fieldUpdate({ name: field.name, source: "FOCUS" });

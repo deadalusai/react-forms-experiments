@@ -7,24 +7,11 @@ import { RootState } from "store";
 import { Form } from "forms";
 import { FormComponentProps, injectStoreBackedForm } from "forms/redux";
 import * as Validators from "forms/validators";
-import { keysOf } from "forms/core";
+import { Field } from "forms/core";
 import { InputContainer, TextInput, SelectInput, MultiSelectInput, RadioInput, CheckboxInput } from "forms/controls";
+import { MyForm, BazType, FooType, BarType, actionCreators as MyFormActions } from "store/myform";
 
 const FORM_NAME = "my-form";
-
-enum FooType { foo1 = 1, foo2 = 2, foo3 = 3 };
-enum BarType { bar1 = "first", bar2 = "second", bar3 = "third" };
-enum BazType { baz1 = "aaa", baz2 = "bbb", baz3 = "ccc" }
-
-interface MyForm {
-    text1: string;
-    text2: string;
-    checkbox1: boolean;
-    checkbox2: BazType | null;
-    select1: FooType | null;
-    select2: FooType[];
-    radio1: BarType | null;
-}
 
 const BAZ_OPTIONS = [
     { label: "Baz one", value: BazType.baz1 },
@@ -49,14 +36,6 @@ const formFieldValidator = Validators.createFormValidator<MyForm>({
     text1: [
         Validators.required(),
         Validators.pattern(/hello/i, "ERROR.MUST_CONTAIN_HELLO"),
-        Validators.onBlur(async (value) => {
-            // Fake a delay
-            await delayMs(2000);
-            const expected = 8;
-            return (value.length < expected)
-                ? { error: "ERROR.TEXT_LENGTH_LESS_THAN_ASYNC", params: { value, expected } }
-                : null;
-        }),
     ],
     text2: [
         Validators.required(),
@@ -76,8 +55,8 @@ const formFieldValidator = Validators.createFormValidator<MyForm>({
 });
 
 // Building a form validation routine manually
-const formValidator = (form: MyForm, info: Validators.FormValidationInfo) => {
-    const errors = formFieldValidator(form, info);
+const formValidator = (form: MyForm) => {
+    const errors = formFieldValidator(form);
     // Cross-field validation example
     if (!errors.text2 && form.text1 != form.text2) {
         errors.text2 = { error: "ERROR.FIELD1_FIELD2_MUST_MATCH" };
@@ -85,9 +64,21 @@ const formValidator = (form: MyForm, info: Validators.FormValidationInfo) => {
     return errors;
 };
 
-export interface StateProps {}
-export interface ActionProps {}
+const validateLengthLessThanAsync = async (value: string, expected: number) => {
+    // Fake a delay
+    await delayMs(2500);
+    return (value.length < expected)
+        ? { error: "ERROR.TEXT_LENGTH_LESS_THAN_ASYNC", params: { value, expected } }
+        : null;
+};
+
 export interface OwnProps {}
+export interface StateProps {
+    submitting: boolean;
+}
+export interface ActionProps {
+    saveChanges: typeof MyFormActions.saveChanges
+}
 
 export type MyFormViewProps = StateProps & ActionProps & OwnProps & FormComponentProps<MyForm>;
 
@@ -95,6 +86,7 @@ export class MyFormView extends React.Component<MyFormViewProps> {
 
     public render() {
         const { form, formUpdate } = this.props;
+        const disabled = this.props.submitting;
         return (
             <section>
                 <form onSubmit={(e) => { e.preventDefault(); this.submit(form); }}>
@@ -103,7 +95,9 @@ export class MyFormView extends React.Component<MyFormViewProps> {
                         field={form.fields.text1}>
                         <TextInput
                             field={form.fields.text1}
-                            fieldUpdate={formUpdate} />
+                            fieldUpdate={formUpdate}
+                            disabled={disabled}
+                            onBlur={() => this.startAsyncValidation(form.fields.text1)} />
                     </InputContainer>
 
                     <InputContainer
@@ -111,7 +105,8 @@ export class MyFormView extends React.Component<MyFormViewProps> {
                         field={form.fields.text2}>
                         <TextInput
                             field={form.fields.text2}
-                            fieldUpdate={formUpdate} />
+                            fieldUpdate={formUpdate}
+                            disabled={disabled} />
                     </InputContainer>
 
                     <InputContainer
@@ -120,7 +115,8 @@ export class MyFormView extends React.Component<MyFormViewProps> {
                         <CheckboxInput
                             label="Checkbox-sepecific label"
                             field={form.fields.checkbox1}
-                            fieldUpdate={formUpdate} />
+                            fieldUpdate={formUpdate}
+                            disabled={disabled} />
                     </InputContainer>
 
                     <InputContainer
@@ -132,7 +128,8 @@ export class MyFormView extends React.Component<MyFormViewProps> {
                                 label={option.label}
                                 values={{ checked: option.value, unchecked: null }}
                                 field={form.fields.checkbox2}
-                                fieldUpdate={formUpdate} />
+                                fieldUpdate={formUpdate}
+                                disabled={disabled} />
                         ))}
                     </InputContainer>
 
@@ -142,6 +139,7 @@ export class MyFormView extends React.Component<MyFormViewProps> {
                         <SelectInput
                             field={form.fields.select1}
                             fieldUpdate={formUpdate}
+                            disabled={disabled}
                             options={[
                                 { label: "-- Please select --", value: null },
                                 ...FOO_OPTIONS,
@@ -154,6 +152,7 @@ export class MyFormView extends React.Component<MyFormViewProps> {
                         <MultiSelectInput
                             field={form.fields.select2}
                             fieldUpdate={formUpdate}
+                            disabled={disabled}
                             options={BAZ_OPTIONS} />
                     </InputContainer>
 
@@ -166,33 +165,25 @@ export class MyFormView extends React.Component<MyFormViewProps> {
                                 label={option.label}
                                 value={option.value}
                                 field={form.fields.radio1}
-                                fieldUpdate={formUpdate} />
+                                fieldUpdate={formUpdate}
+                                disabled={disabled} />
                         ))}
                     </InputContainer>
 
                     <div>
-                        <button type="submit">
+                        <button
+                            type="submit"
+                            disabled={this.props.submitting}>
                             Submit
-                            {form.meta.validating && " ⏳"}
                         </button>
-                        <button type="button" onClick={() => this.reset(form)}>
+                        <button
+                            type="button"
+                            disabled={this.props.submitting}
+                            onClick={() => this.reset(form)}>
                             Reset
                         </button>
                     </div>
                 </form>
-                <section>
-                    {keysOf(form.fields).map(name => {
-                        const { meta } = form.fields[name];
-                        return (
-                            <button key={name} type="button" onClick={() => formUpdate({ name, disabled: !meta.disabled })}>
-                                {name} {meta.disabled ? "enable" : "disable"}
-                            </button>
-                        );
-                    })}
-                    <button type="button" onClick={() => formUpdate({ disabled: !form.meta.disabled })}>
-                        all fields {form.meta.disabled ? "enable" : "disable"}
-                    </button>
-                </section>
                 <pre>
                     form: {JSON.stringify(form, null, 4)}
                 </pre>
@@ -201,17 +192,21 @@ export class MyFormView extends React.Component<MyFormViewProps> {
     }
 
     public submit(form: Form<MyForm>) {
-        if (!form.meta.valid || form.meta.validating) {
+        if (!form.meta.valid) {
             this.props.formUpdate({ visited: true });
             return;
         }
-        const json = JSON.stringify(form.current, null, 4);
-        alert(json);
+        this.props.saveChanges(form.name, form.current);
     }
 
     public reset(form: Form<MyForm>) {
         // Re-initialise the form
         this.props.formInit(form.initial);
+    }
+
+    public async startAsyncValidation(field: Field) {
+        var error = await validateLengthLessThanAsync(field.value, 8);
+        this.props.formSetErrors({ [field.name]: error });
     }
 }
 
@@ -230,8 +225,12 @@ const wrap = compose<React.ComponentClass<OwnProps>>(
         }
     }),
     connect<StateProps, ActionProps, OwnProps, RootState>(
-        (_state) => ({}),
-        {}
+        (_state) => ({
+            submitting: _state.myform.submitting,
+        }),
+        {
+            saveChanges: MyFormActions.saveChanges,
+        }
     )
 );
 

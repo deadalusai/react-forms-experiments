@@ -1,6 +1,7 @@
 export { 
     Form,
     FormMeta,
+    FormErrors,
     FormUpdate,
     Field,
     FieldMeta,
@@ -8,7 +9,6 @@ export {
     FieldUpdate,
 } from "forms/core"
 export {
-    FormErrors,
     FormValidator,
     FieldValidator,
 } from "forms/validators";

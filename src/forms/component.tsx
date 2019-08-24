@@ -1,8 +1,7 @@
 import * as React from "react";
 
-import { Form, FormUpdate, FieldUpdate, formInit, formUpdateAll, formUpdateField, formUpdateErrors, formCompleteAsyncValidation, FormValidationEventSource } from "forms/core";
-import { FormValidator } from 'forms';
-import { formApplyValidator, registerValidationListener, unregisterValidationListener } from './validators';
+import { Form, FormErrors, FormUpdateErrorsEvent, FormUpdate, FieldUpdate, formInit, formUpdateAll, formUpdateField, formUpdateErrors } from "forms/core";
+import { FormValidator } from 'forms/validators';
 
 export interface FormOptions<TForm> {
     /** The name of the form, global to the app */
@@ -16,36 +15,22 @@ export interface FormOptions<TForm> {
 export interface FormComponentProps<TForm = any> {
     form: Form<TForm>;
     formInit: (initial: TForm) => void;
-    formUpdate: (update: FormUpdate | FieldUpdate<TForm>) => void;
+    formUpdate: (update: FormUpdate | FieldUpdate<any, TForm>) => void;
+    formSetErrors: (errors: FormErrors<TForm>) => void;
 }
 
 export abstract class FormComponentBase<TForm, TOwnProps, TState = {}> extends React.Component<TOwnProps, TState> {
     
     public abstract options: FormOptions<TForm>;
 
-    public componentDidMount() {
-        registerValidationListener(this.options.name, (fieldName, error) => {
-            let form = this.get();
-            form = formCompleteAsyncValidation(form, fieldName as keyof TForm, error);
-            this.set(form);
-        });
-    }
-
-    public componentWillUnmount() {
-        unregisterValidationListener(this.options.name);
-    }
-
     public abstract get(): Form<TForm>;
     public abstract set(form: Form<TForm>): void;
 
     public formInit(initial: TForm): Form<TForm> {
         let form = formInit<TForm>(this.options.name, initial);
-        if (this.options.validator) {
-            const source: FormValidationEventSource = { type: "INIT" };
-            const errors = formApplyValidator(form, this.options.validator, source);
-            form = formUpdateErrors(form, errors, source);
-        }
-        return form;
+        const errors = this.options.validator && this.options.validator(form.current) || {};
+        const event: FormUpdateErrorsEvent = { type: "INIT" };
+        return formUpdateErrors(form, errors, event);
     }
 
     public formUpdate(update: FormUpdate | FieldUpdate<TForm>): Form<TForm> {
@@ -57,10 +42,10 @@ export abstract class FormComponentBase<TForm, TOwnProps, TState = {}> extends R
             // Field update
             form = formUpdateField(form, update);
             // Apply validation only on change and blur events
-            if (this.options.validator && (update.source === "CHANGE" || update.source === "BLUR")) {
-                const source: FormValidationEventSource = { type: update.source, fieldName: update.name as string };
-                const errors = formApplyValidator(form, this.options.validator, source);
-                form = formUpdateErrors(form, errors, source);
+            if (update.source === "CHANGE" || update.source === "BLUR") {
+                const errors = this.options.validator && this.options.validator(form.current) || {};
+                const event: FormUpdateErrorsEvent = { type: update.source, fieldName: update.name as string };
+                form = formUpdateErrors(form, errors, event);
             }
         }
         else {
@@ -68,6 +53,15 @@ export abstract class FormComponentBase<TForm, TOwnProps, TState = {}> extends R
             form = formUpdateAll(form, update);
         }
         return form;
+    }
+
+    public formSetErrors(errors: FormErrors<TForm>): Form<TForm> {
+        let form = this.get();
+        if (!form) {
+            throw new Error("Called formSetErrors before formInit");
+        }
+        const event: FormUpdateErrorsEvent = { type: "SETERRORS" };
+        return formUpdateErrors(form, errors, event);
     }
 
     public abstract render(): React.ReactNode;
@@ -107,6 +101,7 @@ export function injectStateBackedForm<TForm = any, TOwnProps = {}>(options: Form
                     form: this.get(),
                     formInit: (init) => this.set(this.formInit(init)),
                     formUpdate: (form) => this.set(this.formUpdate(form)),
+                    formSetErrors: (errors) => this.set(this.formSetErrors(errors)),
                 };
                 return (
                     <WrappedComponent

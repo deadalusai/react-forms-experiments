@@ -24,12 +24,13 @@ div.input-container label.input-container--label {
     display: block;
 }
 
-div.input-container--disabled .input-container--label { text-decoration: line-through; }
 div.input-container--touched {}
 div.input-container--focused .input-container--label { text-decoration: underline; }
 div.input-container--dirty {}
+div.input-container--valid {}
+div.input-container--invalid {}
 div.input-container--pristine {}
-div.input-container--validating {}
+div.input-container--visited {}
 
 span.error {
     color: red;

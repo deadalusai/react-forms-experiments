@@ -16,7 +16,7 @@ export function injectStoreBackedForm<TForm = any, TOwnProps = {}>(options: Form
             form: Form<TForm>;
         }
         interface IActionProps {
-            formUpdate: typeof FormsStore.actions.updateForm;
+            formUpdate: typeof FormsStore.actions.setForm;
         }
         class FormComponent extends FormComponentBase<TForm, IStoreProps & IActionProps & TOwnProps> {
             public options = options;
@@ -40,6 +40,7 @@ export function injectStoreBackedForm<TForm = any, TOwnProps = {}>(options: Form
                     form,
                     formInit: (init) => this.set(this.formInit(init)),
                     formUpdate: (form) => this.set(this.formUpdate(form)),
+                    formSetErrors: (errors) => this.set(this.formSetErrors(errors)),
                 };
                 return (
                     <WrappedComponent
@@ -54,7 +55,7 @@ export function injectStoreBackedForm<TForm = any, TOwnProps = {}>(options: Form
                 return { form };
             },
             {
-                formUpdate: FormsStore.actions.updateForm,
+                formUpdate: FormsStore.actions.setForm,
             }
         );
         return connector(FormComponent as any);

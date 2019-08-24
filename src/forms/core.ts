@@ -11,21 +11,8 @@ export interface FieldError {
     sticky?: true;
 }
 
-/** Represents an asynchronous validation operation in progress */
-export interface AsyncValidationMarker {
-    async: number;
-}
-
-function isFieldError(e: FieldError | AsyncValidationMarker | undefined): e is FieldError {
-    return e != null && typeof e === "object" && "error" in e;
-}
-
-function isAsyncValidationMarker(e: FieldError | AsyncValidationMarker | undefined): e is AsyncValidationMarker {
-    return e != null && typeof e === "object" && "async" in e;
-}
-
-export type FieldErrorMap<TForm = any> = {
-    [TKey in keyof TForm]?: FieldError | AsyncValidationMarker;
+export type FormErrors<TForm> = {
+    [key in keyof TForm]?: FieldError | null;
 };
 
 export interface FieldMeta {
@@ -34,8 +21,6 @@ export interface FieldMeta {
     readonly touched: boolean;
     readonly focused: boolean;
     readonly dirty: boolean;
-    readonly disabled: boolean;
-    readonly validating: boolean;
     readonly error: FieldError | null;
 }
 
@@ -44,8 +29,6 @@ export interface FormMeta {
     readonly visited: boolean;
     readonly touched: boolean;
     readonly dirty: boolean;
-    readonly disabled: boolean;
-    readonly validating: boolean;
     readonly focused: string | null; // The name of the field which currently holds focus
 }
 
@@ -85,12 +68,10 @@ export function formInit<TForm>(name: string, initial: TForm): Form<TForm> {
         const value = initial[name];
         const meta: FieldMeta = {
             valid: true,
-            validating: false,
             visited: false,
             touched: false,
             focused: false,
             dirty: false,
-            disabled: false,
             error: null,
         };
         fields[name] = { name, value, meta };
@@ -103,10 +84,8 @@ export function formInit<TForm>(name: string, initial: TForm): Form<TForm> {
         meta: {
             visited: false,
             valid: true,
-            validating: false,
             touched: false,
             dirty: false,
-            disabled: false,
             focused: null,
         },
     };
@@ -116,7 +95,6 @@ export type FieldUpdate<TValue = any, TForm = any> = {
     name: keyof TForm,
     source?: "FOCUS" | "BLUR" | "CHANGE",
     value?: TValue,
-    disabled?: boolean,
 };
 
 /**
@@ -141,7 +119,6 @@ export function formUpdateField<TForm>(form: Form<TForm>, update: FieldUpdate<an
             update.source === "FOCUS" ? true :
             update.source === "BLUR" ? false : field.meta.focused
         ),
-        disabled: "disabled" in update ? update.disabled! : field.meta.disabled,
         dirty: value != form.initial[name],
     };
     // Calculate new form metadata
@@ -151,7 +128,6 @@ export function formUpdateField<TForm>(form: Form<TForm>, update: FieldUpdate<an
         ...form.meta,
         touched: names.reduce((touched, name) => touched || metaFor(name).touched, false as boolean),
         dirty: names.reduce((dirty, name) => dirty || metaFor(name).dirty, false as boolean),
-        disabled: names.reduce((disabled, name) => disabled && metaFor(name).disabled, false as boolean),
         focused: names.find((name) => metaFor(name).focused) as string || null,
     };
     return {
@@ -168,8 +144,8 @@ export function formUpdateField<TForm>(form: Form<TForm>, update: FieldUpdate<an
     };
 }
 
-export interface FormValidationEventSource {
-    type: "INIT" | "BLUR" | "CHANGE";
+export interface FormUpdateErrorsEvent {
+    type: "INIT" | "BLUR" | "CHANGE" | "SETERRORS";
     fieldName?: string;
 }
 
@@ -178,100 +154,53 @@ export interface FormValidationEventSource {
  * @param form The form to update
  * @param errors Current field error information.
  */
-export function formUpdateErrors<TForm>(form: Form<TForm>, errorMap: FieldErrorMap<TForm>, source: FormValidationEventSource): Form<TForm> {
-    let formValid = true;
-    let formValidating = false;
+export function formUpdateErrors<TForm>(form: Form<TForm>, errorMap: FormErrors<TForm>, source: FormUpdateErrorsEvent): Form<TForm> {
+    // SETERRORS only updates the fields mentioned in the error map
+    // Other events update the entire form
+    const namesToUpdate = (source.type === "SETERRORS")
+        ? keysOf(errorMap)
+        : keysOf(form.fields);
     // Calculate new field/form meta
-    const fields: Partial<FormFields<TForm>> = {};
-    for (const name of keysOf(form.fields)) {
+    const newFields = { ...form.fields };
+    for (const name of namesToUpdate) {
         const field = form.fields[name];
-        const newError = errorMap[name];
+        const newError = errorMap[name] as FieldError | null;
         const oldError = field.meta.error;
-        const invalid = isFieldError(newError);
         const error = (
-            // New errors supercede everything
-            (invalid) ? newError :
-            // A CHANGE event on this field always resets the error
+            // New errors take precedence
+            (newError) ? newError :
+            // A CHANGE event on a particular field always resets the error on that field
             (source.type === "CHANGE" && source.fieldName === name) ? null :
-            // Otherwise, existing "sticky" errors are retained
+            // Existing "sticky" errors are retained
             (oldError && oldError.sticky) ? oldError : null
         );
-        // The `validating` flag is set when async validation begins and cleared only when
-        // receiving a concrete error or by `formCompleteAsyncValidation`
-        const validating = (
-            isAsyncValidationMarker(newError)
-                ? true
-                : invalid ? false : field.meta.validating
-        );
-        fields[name] = {
+        (newFields as any)[name] = {
             ...field,
             meta: {
                 ...field.meta,
-                validating,
                 valid: !error,
-                error,
+                error: error && {
+                    error: error.error,
+                    param: error.params,
+                    // Errors set by "SETERRORS" are always marked sticky
+                    sticky: error.sticky || source.type === "SETERRORS"
+                },
             },
         };
-        if (invalid) {
-            formValid = false;
-        }
-        if (validating) {
-            formValidating = true;
-        }
     }
+    const formValid = keysOf(form.fields).reduce((valid, name) => valid && !newFields[name].meta.error, true);
     return {
         ...form,
-        fields: fields as FormFields<TForm>,
+        fields: newFields,
         meta: {
             ...form.meta,
             valid: formValid,
-            validating: formValidating,
         },
-    };
-}
-
-/**
- * Updates the error state of a single field in the form after it has completed async validation.
- * @param form The form to update
- * @param name The name of the field to update.
- * @param error The error to write to the field.
- */
-export function formCompleteAsyncValidation<TForm>(form: Form<TForm>, name: keyof TForm, error: FieldError | null) {
-    const field = form.fields[name];
-    if (!field) {
-        return form;
-    }
-    // Calculate new field meta.
-    const meta: FieldMeta = {
-        ...field.meta,
-        validating: false,
-        valid: !error,
-        error,
-    };
-    // Calculate new form meta
-    const metaFor = (fieldName: keyof TForm) => (name === fieldName) ? meta : form.fields[name].meta;
-    const names = keysOf(form.fields);
-    const formMeta: FormMeta = {
-        ...form.meta,
-        validating: names.reduce((validating, name) => validating && metaFor(name).validating, false),
-        disabled: names.reduce((disabled, name) => disabled && metaFor(name).disabled, false),
-    };
-    return {
-        ...form,
-        fields: {
-            ...form.fields,
-            [name]: {
-                ...field,
-                meta,
-            },
-        },
-        meta: formMeta,
     };
 }
 
 export interface FormUpdate {
     touched?: boolean;
-    disabled?: boolean;
     visited?: boolean;
 }
 
@@ -290,7 +219,6 @@ export function formUpdateAll<TForm>(form: Form<TForm>, update: FormUpdate): For
             meta: {
                 ...field.meta,
                 touched: "touched" in update ? update.touched! : field.meta.touched,
-                disabled: "disabled" in update ? update.disabled! : field.meta.disabled,
                 visited: "visited" in update ? update.visited! : field.meta.visited,
             }
         };
@@ -300,7 +228,6 @@ export function formUpdateAll<TForm>(form: Form<TForm>, update: FormUpdate): For
         meta: {
             ...form.meta,
             touched: "touched" in update ? update.touched! : form.meta.touched,
-            disabled: "disabled" in update ? update.disabled! : form.meta.disabled,
             visited: "visited" in update ? update.visited! : form.meta.visited,
         },
         fields: fields as FormFields<TForm>,
