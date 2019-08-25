@@ -8,7 +8,7 @@ export interface FieldError {
     /** Format parameters for the error */
     params?: any;
     /** If set, this error will only be cleared by another error or a CHANGE event on the field. */
-    sticky?: true;
+    sticky?: boolean;
 }
 
 export type FormErrors<TForm> = {
@@ -93,7 +93,7 @@ export function formInit<TForm>(name: string, initial: TForm): Form<TForm> {
 
 export type FieldUpdate<TValue = any, TForm = any> = {
     name: keyof TForm,
-    source: "FOCUS" | "BLUR" | "CHANGE",
+    type: "FOCUS" | "BLUR" | "CHANGE",
     value?: TValue,
 };
 
@@ -113,11 +113,11 @@ export function formUpdateField<TForm>(form: Form<TForm>, update: FieldUpdate<an
     // Calculate new field metadata
     const meta: FieldMeta = {
         ...field.meta,
-        touched: field.meta.touched || update.source === "CHANGE",
-        visited: field.meta.visited || update.source === "BLUR",
+        touched: field.meta.touched || update.type === "CHANGE",
+        visited: field.meta.visited || update.type === "BLUR",
         focused: (
-            update.source === "FOCUS" ? true :
-            update.source === "BLUR" ? false : field.meta.focused
+            update.type === "FOCUS" ? true :
+            update.type === "BLUR" ? false : field.meta.focused
         ),
         dirty: value != form.initial[name],
     };
@@ -176,14 +176,14 @@ export function formUpdateErrors<TForm>(form: Form<TForm>, errorMap: FormErrors<
             // Existing "sticky" errors are retained
             (oldError && oldError.sticky) ? oldError : null
         );
-        (newFields as any)[name] = {
+        (newFields as Partial<FormFields<TForm>>)[name] = {
             ...field,
             meta: {
                 ...field.meta,
                 valid: !error,
                 error: error && {
                     error: error.error,
-                    param: error.params,
+                    params: error.params,
                     // Errors set by "SETERRORS" are always marked sticky
                     sticky: error.sticky || event.type === "SETERRORS"
                 },

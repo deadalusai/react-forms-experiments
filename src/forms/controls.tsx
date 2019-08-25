@@ -78,15 +78,15 @@ export function TextInput({ className, disabled, field, fieldUpdate, onChange, o
             disabled={disabled}
             value={field.value}
             onFocus={() => {
-                fieldUpdate({ name: field.name, source: "FOCUS" });
+                fieldUpdate({ name: field.name, type: "FOCUS" });
                 onFocus && onFocus();
             }}
             onBlur={() => {
-                fieldUpdate({ name: field.name, source: "BLUR" });
+                fieldUpdate({ name: field.name, type: "BLUR" });
                 onBlur && onBlur();
             }}
             onChange={e => {
-                fieldUpdate({ name: field.name, source: "CHANGE", value: e.target.value });
+                fieldUpdate({ name: field.name, type: "CHANGE", value: e.target.value });
                 onChange && onChange(e.target.value);
             }} />
     );
@@ -130,16 +130,16 @@ export function SelectInput({ className, disabled, field, fieldUpdate, onFocus, 
             value={getOptionId(options, field.value)}
             disabled={disabled}
             onFocus={() => {
-                fieldUpdate({ name: field.name, source: "FOCUS" });
+                fieldUpdate({ name: field.name, type: "FOCUS" });
                 onFocus && onFocus();
             }}
             onBlur={() => {
-                fieldUpdate({ name: field.name, source: "BLUR" });
+                fieldUpdate({ name: field.name, type: "BLUR" });
                 onBlur && onBlur();
             }}
             onChange={e => {
                 const value = getOptionValue(options, e.target.value);
-                fieldUpdate({ name: field.name, source: "CHANGE", value });
+                fieldUpdate({ name: field.name, type: "CHANGE", value });
                 onChange && onChange(value);
             }}>
             {options.map((option, id) => (
@@ -185,16 +185,16 @@ export function MultiSelectInput({ className, disabled, field, fieldUpdate, onFo
             disabled={disabled}
             multiple={true}
             onFocus={() => {
-                fieldUpdate({ name: field.name, source: "FOCUS" });
+                fieldUpdate({ name: field.name, type: "FOCUS" });
                 onFocus && onFocus();
             }}
             onBlur={() => {
-                fieldUpdate({ name: field.name, source: "BLUR" });
+                fieldUpdate({ name: field.name, type: "BLUR" });
                 onBlur && onBlur();
             }}
             onChange={e => {
                 const value = getSelectedValues(options, e.target.selectedOptions);
-                fieldUpdate({ name: field.name, source: "CHANGE", value });
+                fieldUpdate({ name: field.name, type: "CHANGE", value });
                 onChange && onChange(value);
             }}>
             {options.map((option, id) => (
@@ -231,15 +231,15 @@ export function RadioInput({ className, disabled, label, value, field, fieldUpda
                 disabled={disabled}
                 checked={value === field.value}
                 onFocus={() => {
-                    fieldUpdate({ name: field.name, source: "FOCUS" });
+                    fieldUpdate({ name: field.name, type: "FOCUS" });
                     onFocus && onFocus();
                 }}
                 onBlur={() => {
-                    fieldUpdate({ name: field.name, source: "BLUR" });
+                    fieldUpdate({ name: field.name, type: "BLUR" });
                     onBlur && onBlur();
                 }}
                 onChange={() => {
-                    fieldUpdate({ name: field.name, source: "CHANGE", value });
+                    fieldUpdate({ name: field.name, type: "CHANGE", value });
                     onChange && onChange(value);
                 }} />
             {label && <span>{label}</span>}
@@ -275,16 +275,16 @@ export function CheckboxInput({ className, disabled, label, values, field, field
                 disabled={disabled}
                 checked={isChecked}
                 onFocus={() => {
-                    fieldUpdate({ name: field.name, source: "FOCUS" });
+                    fieldUpdate({ name: field.name, type: "FOCUS" });
                     onFocus && onFocus();
                 }}
                 onBlur={() => {
-                    fieldUpdate({ name: field.name, source: "BLUR" });
+                    fieldUpdate({ name: field.name, type: "BLUR" });
                     onBlur && onBlur();
                 }}
                 onChange={() => {
                     const value = isChecked ? uncheckedValue : checkedValue;
-                    fieldUpdate({ name: field.name, source: "CHANGE", value });
+                    fieldUpdate({ name: field.name, type: "CHANGE", value });
                     onChange && onChange(value);
                 }} />
             {label && <span>{label}</span>}

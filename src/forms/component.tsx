@@ -42,9 +42,9 @@ export abstract class FormComponentBase<TForm, TOwnProps, TState = {}> extends R
             // Field update
             form = formUpdateField(form, update);
             // Apply validation only on change and blur events
-            if (update.source === "CHANGE" || update.source === "BLUR") {
+            if (update.type === "CHANGE" || update.type === "BLUR") {
                 const errors = this.options.validator && this.options.validator(form.current) || {};
-                const event: FormUpdateErrorsEvent = { type: update.source, fieldName: update.name as string };
+                const event: FormUpdateErrorsEvent = { type: update.type, fieldName: update.name as string };
                 form = formUpdateErrors(form, errors, event);
             }
         }
