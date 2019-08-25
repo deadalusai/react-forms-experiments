@@ -44,8 +44,8 @@ export type FormFields<TForm = any> = {
 
 export type Form<TForm = any> = {
     readonly name: string;
-    readonly initial: TForm;
-    readonly current: TForm;
+    readonly initial: Readonly<TForm>;
+    readonly current: Readonly<TForm>;
     readonly fields: FormFields<TForm>;
     readonly meta: FormMeta;
 };
@@ -153,11 +153,12 @@ export interface FormUpdateErrorsEvent {
  * Updates the error state of each field in the form.
  * @param form The form to update
  * @param errors Current field error information.
+ * @param event Infomation about the event which triggered the update.
  */
-export function formUpdateErrors<TForm>(form: Form<TForm>, errorMap: FormErrors<TForm>, source: FormUpdateErrorsEvent): Form<TForm> {
+export function formUpdateErrors<TForm>(form: Form<TForm>, errorMap: FormErrors<TForm>, event: FormUpdateErrorsEvent): Form<TForm> {
     // SETERRORS only updates the fields mentioned in the error map
     // Other events update the entire form
-    const namesToUpdate = (source.type === "SETERRORS")
+    const namesToUpdate = (event.type === "SETERRORS")
         ? keysOf(errorMap)
         : keysOf(form.fields);
     // Calculate new field/form meta
@@ -170,7 +171,7 @@ export function formUpdateErrors<TForm>(form: Form<TForm>, errorMap: FormErrors<
             // New errors take precedence
             (newError) ? newError :
             // A CHANGE event on a particular field always resets the error on that field
-            (source.type === "CHANGE" && source.fieldName === name) ? null :
+            (event.type === "CHANGE" && event.fieldName === name) ? null :
             // Existing "sticky" errors are retained
             (oldError && oldError.sticky) ? oldError : null
         );
@@ -183,18 +184,18 @@ export function formUpdateErrors<TForm>(form: Form<TForm>, errorMap: FormErrors<
                     error: error.error,
                     param: error.params,
                     // Errors set by "SETERRORS" are always marked sticky
-                    sticky: error.sticky || source.type === "SETERRORS"
+                    sticky: error.sticky || event.type === "SETERRORS"
                 },
             },
         };
     }
-    const formValid = keysOf(form.fields).reduce((valid, name) => valid && !newFields[name].meta.error, true);
+    const valid = keysOf(form.fields).reduce((valid, name) => valid && !newFields[name].meta.error, true);
     return {
         ...form,
         fields: newFields,
         meta: {
             ...form.meta,
-            valid: formValid,
+            valid,
         },
     };
 }
