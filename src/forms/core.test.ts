@@ -1,4 +1,5 @@
-import { Form, FieldUpdate, keysOf, formInit, formUpdateField, formUpdateErrors, FormErrors, FormUpdateErrorsEvent, FieldError, FieldMeta } from "./core";
+import { Form, FieldUpdate, FormErrors, FormUpdateErrorsEvent, FieldError, FormUpdate } from "./core";
+import { keysOf, formInit, formUpdateField, formUpdateErrors, formUpdateAll } from "./core";
 
 describe("forms core", () => {
 
@@ -330,5 +331,38 @@ describe("forms core", () => {
                 expect(form.fields[spec.fieldName].meta.error).toEqual(null);
             });
         }
+    });
+
+    describe("formUpdateAll", () => {
+
+        it("should set visited on all fields", () => {
+            // Arrange
+            const oldForm = formInit(FORM_NAME, INITIAL_FORM_DATA);
+            const formUpdate: FormUpdate = {
+                visited: true,
+            };
+            // Act
+            const form = formUpdateAll(oldForm, formUpdate);
+            // Assert
+            expect(form.fields.strField.meta.visited).toEqual(true);
+            expect(form.fields.numField.meta.visited).toEqual(true);
+            expect(form.fields.boolField.meta.visited).toEqual(true);
+            expect(form.meta.visited).toEqual(true);
+        });
+
+        it("should set touched on all fields", () => {
+            // Arrange
+            const oldForm = formInit(FORM_NAME, INITIAL_FORM_DATA);
+            const formUpdate: FormUpdate = {
+                touched: true,
+            };
+            // Act
+            const form = formUpdateAll(oldForm, formUpdate);
+            // Assert
+            expect(form.fields.strField.meta.touched).toEqual(true);
+            expect(form.fields.numField.meta.touched).toEqual(true);
+            expect(form.fields.boolField.meta.touched).toEqual(true);
+            expect(form.meta.touched).toEqual(true);
+        });
     });
 });
