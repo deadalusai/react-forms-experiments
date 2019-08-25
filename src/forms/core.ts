@@ -93,7 +93,7 @@ export function formInit<TForm>(name: string, initial: TForm): Form<TForm> {
 
 export type FieldUpdate<TValue = any, TForm = any> = {
     name: keyof TForm,
-    source?: "FOCUS" | "BLUR" | "CHANGE",
+    source: "FOCUS" | "BLUR" | "CHANGE",
     value?: TValue,
 };
 
@@ -126,8 +126,9 @@ export function formUpdateField<TForm>(form: Form<TForm>, update: FieldUpdate<an
     const names = keysOf(form.fields);
     const formMeta: FormMeta = {
         ...form.meta,
-        touched: names.reduce((touched, name) => touched || metaFor(name).touched, false as boolean),
         dirty: names.reduce((dirty, name) => dirty || metaFor(name).dirty, false as boolean),
+        touched: names.reduce((touched, name) => touched || metaFor(name).touched, false as boolean),
+        visited: names.reduce((visited, name) => visited || metaFor(name).visited, false as boolean),
         focused: names.find((name) => metaFor(name).focused) as string || null,
     };
     return {

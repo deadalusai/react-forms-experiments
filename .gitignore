@@ -4,6 +4,7 @@ webhost/obj/
 
 # Node junk
 node_modules/
+coverage/
 
 # Compiled junk
 wwwroot/lib/
