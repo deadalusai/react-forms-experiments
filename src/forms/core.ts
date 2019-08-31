@@ -32,23 +32,23 @@ export interface FormMeta {
     readonly focused: string | null; // The name of the field which currently holds focus
 }
 
-export type Field<TValue = any, TKey = any> = {
+export interface Field<TValue = any, TKey = any> {
     readonly name: TKey;
     readonly value: TValue;
     readonly meta: FieldMeta;
-};
+}
 
 export type FormFields<TForm = any> = {
     readonly [TKey in keyof TForm]: Field<TForm[TKey], TKey>
 };
 
-export type Form<TForm = any> = {
+export interface Form<TForm = any> {
     readonly name: string;
     readonly initial: Readonly<TForm>;
     readonly current: Readonly<TForm>;
     readonly fields: FormFields<TForm>;
     readonly meta: FormMeta;
-};
+}
 
 //
 // Functions
@@ -101,7 +101,7 @@ export type FieldUpdate<TValue = any, TForm = any> = {
  * Updates the given form with the given field data.
  * NOTE: Field dirty state is always calulcated based on the initial state of the form.
  * @param form The form to update
- * @param updates A list of field updates to apply.
+ * @param update The field update to apply
  */
 export function formUpdateField<TForm>(form: Form<TForm>, update: FieldUpdate<any, TForm>): Form<TForm> {
     const name = update.name;
@@ -153,8 +153,8 @@ export interface FormUpdateErrorsEvent {
 /**
  * Updates the error state of each field in the form.
  * @param form The form to update
- * @param errors Current field error information.
- * @param event Infomation about the event which triggered the update.
+ * @param errors Current field error information
+ * @param event Infomation about the source of the errors
  */
 export function formUpdateErrors<TForm>(form: Form<TForm>, errorMap: FormErrors<TForm>, event: FormUpdateErrorsEvent): Form<TForm> {
     // SETERRORS only updates the fields mentioned in the error map
