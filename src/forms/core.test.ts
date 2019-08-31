@@ -269,7 +269,6 @@ describe("forms core", () => {
         const EVENT_SPECS = [
             { type: "INIT" as "INIT" },
             { type: "CHANGE" as "CHANGE" },
-            { type: "BLUR" as "BLUR" },
             { type: "SETERRORS" as "SETERRORS" },
         ];
         for (const spec of EVENT_SPECS) {

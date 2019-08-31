@@ -146,7 +146,7 @@ export function formUpdateField<TForm>(form: Form<TForm>, update: FieldUpdate<an
 }
 
 export interface FormUpdateErrorsEvent {
-    type: "INIT" | "BLUR" | "CHANGE" | "SETERRORS";
+    type: "INIT" | "CHANGE" | "SETERRORS";
     fieldName?: string;
 }
 
