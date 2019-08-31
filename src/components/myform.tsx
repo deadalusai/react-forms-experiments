@@ -80,9 +80,18 @@ export interface ActionProps {
     saveChanges: typeof MyFormActions.saveChanges
 }
 
+interface ComponentState {
+    text1Validating: boolean;
+}
+
 export type MyFormViewProps = StateProps & ActionProps & OwnProps & FormComponentProps<MyForm>;
 
-export class MyFormView extends React.Component<MyFormViewProps> {
+export class MyFormView extends React.Component<MyFormViewProps, ComponentState> {
+
+    constructor(props: any, context: any) {
+        super(props, context);
+        this.state = { text1Validating: false };
+    }
 
     public render() {
         const { form, formUpdate } = this.props;
@@ -91,13 +100,16 @@ export class MyFormView extends React.Component<MyFormViewProps> {
             <section>
                 <form onSubmit={(e) => { e.preventDefault(); this.submit(form); }}>
                     <InputContainer
-                        label="Text input 1"
+                        label={<>
+                            {"Text input 1"}
+                            {this.state.text1Validating && " (validating)"}
+                        </>}
                         field={form.fields.text1}>
                         <TextInput
                             field={form.fields.text1}
                             fieldUpdate={formUpdate}
                             disabled={disabled}
-                            onBlur={() => this.startAsyncValidation(form.fields.text1)} />
+                            onBlur={() => this.startText1Validation(form)} />
                     </InputContainer>
 
                     <InputContainer
@@ -192,7 +204,7 @@ export class MyFormView extends React.Component<MyFormViewProps> {
     }
 
     public submit(form: Form<MyForm>) {
-        if (!form.meta.valid) {
+        if (!this.state.text1Validating && !form.meta.valid) {
             this.props.formUpdate({ visited: true });
             return;
         }
@@ -204,9 +216,17 @@ export class MyFormView extends React.Component<MyFormViewProps> {
         this.props.formInit(form.initial);
     }
 
-    public async startAsyncValidation(field: Field) {
-        var error = await validateLengthLessThanAsync(field.value, 8);
-        this.props.formSetErrors({ [field.name]: error });
+    public async startText1Validation(form: Form<MyForm>) {
+        const { text1 } = form.fields;
+        if (!text1.meta.valid) {
+            return;
+        }
+        this.setState({ text1Validating: true });
+        const error = await validateLengthLessThanAsync(text1.value, 8);
+        this.setState({ text1Validating: false });
+        this.props.formSetErrors({
+            [text1.name]: error,
+        });
     }
 }
 
