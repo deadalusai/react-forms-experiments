@@ -7,12 +7,12 @@ export {
     FieldMeta,
     FieldError,
     FieldUpdate,
-} from "forms/core"
+} from "./core"
 export {
     FormValidator,
     FieldValidator,
-} from "forms/validators";
+} from "./validators";
 export {
     FormComponentProps,
     injectStateBackedForm
-} from "forms/component";
+} from "./component";

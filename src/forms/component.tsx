@@ -1,7 +1,7 @@
 import * as React from "react";
 
-import { Form, FormErrors, FormUpdateErrorsEvent, FormUpdate, FieldUpdate, formInit, formUpdateAll, formUpdateField, formUpdateErrors } from "forms/core";
-import { FormValidator } from 'forms/validators';
+import { Form, FormErrors, FormUpdateErrorsEvent, FormUpdate, FieldUpdate, formInit, formUpdateAll, formUpdateField, formUpdateErrors } from "./core";
+import { FormValidator } from './validators';
 
 export interface FormOptions<TForm> {
     /** The name of the form, global to the app */

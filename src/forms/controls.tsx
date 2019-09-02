@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { Field, FieldUpdate, FieldError } from "forms/core";
+import { Field, FieldUpdate, FieldError } from "./core";
 
 //
 // Utility components and functions

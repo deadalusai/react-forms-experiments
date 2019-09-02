@@ -1,4 +1,4 @@
-import { FormErrors, FieldError, keysOf } from "forms/core";
+import { FormErrors, FieldError, keysOf } from "./core";
 
 export type FieldValidator<TValue = any> = (value: TValue) => FieldError | null;
 
@@ -57,29 +57,29 @@ export function combineValidators<TValue>(validators: FieldValidator<TValue>[]):
 //
 
 export function required(error = "ERROR.REQUIRED"): FieldValidator {
-    return value => !value ? { error, params: { value } } : null;
+    return value => (value === null || value === undefined || /^\s*$/.test(value)) ? { error, params: { value } } : null;
 }
 
 export function number(error = "ERROR.MUST_BE_A_NUMBER"): FieldValidator {
-    return value => isNaN(value) ? { error, params: { value } } : null;
+    return value => (value !== null && value !== undefined && isNaN(value)) ? { error, params: { value } } : null;
 }
 
 export function lessThanOrEqual(n: number, error = "ERROR.MUST_BE_LESS_THAN_OR_EQUAL"): FieldValidator {
-    return value => typeof value === "number" && value > n ? { error, params: { n, value } } : null;
+    return value => (typeof value === "number" && value > n) ? { error, params: { n, value } } : null;
 }
 
 export function lessThan(n: number, error = "ERROR.MUST_BE_LESS_THAN"): FieldValidator {
-    return value => typeof value === "number" && value >= n ? { error, params: { n, value } } : null;
+    return value => (typeof value === "number" && value >= n) ? { error, params: { n, value } } : null;
 }
 
 export function greaterThanOrEqual(n: number, error = "ERROR.MUST_BE_GREATER_THAN_OR_EQUAL"): FieldValidator {
-    return value => typeof value === "number" && value < n ? { error, params: { n, value } } : null;
+    return value => (typeof value === "number" && value < n) ? { error, params: { n, value } } : null;
 }
 
 export function greaterThan(n: number, error = "ERROR.MUST_BE_GREATER_THAN"): FieldValidator {
-    return value => typeof value === "number" && value <= n ? { error, params: { n, value } } : null;
+    return value => (typeof value === "number" && value <= n) ? { error, params: { n, value } } : null;
 }
 
 export function pattern(p: RegExp, error = "ERROR.MUST_MATCH_PATTERN"): FieldValidator {
-    return value => (typeof value === "string") && !p.test(value) ? { error, params: { value } } : null;
+    return value => (typeof value === "string" && !p.test(value)) ? { error, params: { value } } : null;
 }

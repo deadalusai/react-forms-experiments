@@ -1,4 +1,4 @@
-import { ActionsFrom } from "util";
+import { ActionsFrom } from "../../util";
 import { Form, FormErrors, formUpdateErrors, FormUpdateErrorsEvent } from "../core";
 
 //
