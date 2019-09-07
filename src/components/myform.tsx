@@ -7,7 +7,6 @@ import { RootState } from "store";
 import { Form } from "forms";
 import { FormComponentProps, injectStoreBackedForm } from "forms/redux";
 import * as Validators from "forms/validators";
-import { Field } from "forms/core";
 import { InputContainer, TextInput, SelectInput, MultiSelectInput, RadioInput, CheckboxInput } from "forms/controls";
 import { MyForm, BazType, FooType, BarType, actionCreators as MyFormActions } from "store/myform";
 

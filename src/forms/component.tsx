@@ -19,9 +19,10 @@ export interface FormComponentProps<TForm = any> {
     formSetErrors: (errors: FormErrors<TForm>) => void;
 }
 
-export abstract class FormComponentBase<TForm, TOwnProps, TState = {}> extends React.Component<TOwnProps, TState> {
+export abstract class FormComponentBase<TForm, TOwnProps, TWrapperProps, TState = {}> extends React.Component<TOwnProps & TWrapperProps, TState> {
     
     public abstract options: FormOptions<TForm>;
+    public abstract component: React.ComponentClass<TOwnProps & FormComponentProps<TForm>>;
 
     public abstract get(): Form<TForm>;
     public abstract set(form: Form<TForm>): void;
@@ -64,7 +65,16 @@ export abstract class FormComponentBase<TForm, TOwnProps, TState = {}> extends R
         return formUpdateErrors(form, errors, event);
     }
 
-    public abstract render(): React.ReactNode;
+    public render(): React.ReactNode {
+        const formProps: FormComponentProps<TForm> = {
+            form: this.get(),
+            formInit: (init) => this.set(this.formInit(init)),
+            formUpdate: (form) => this.set(this.formUpdate(form)),
+            formSetErrors: (errors) => this.set(this.formSetErrors(errors)),
+        };
+        const Component = this.component;
+        return <Component {...this.props} {...formProps} />;
+    }
 }
 
 /**
@@ -77,8 +87,9 @@ export function injectStateBackedForm<TForm = any, TOwnProps = {}>(options: Form
         interface IState {
             form: Form<TForm>;
         }
-        class FormComponent extends FormComponentBase<TForm, TOwnProps, IState> {
+        class FormComponent extends FormComponentBase<TForm, TOwnProps, {}, IState> {
             public options = options;
+            public component = WrappedComponent;
 
             constructor(props: any) {
                 super(props);
@@ -94,20 +105,6 @@ export function injectStateBackedForm<TForm = any, TOwnProps = {}>(options: Form
 
             public set(form: Form<TForm>): void {
                 this.setState({ form });
-            }
-
-            public render(): React.ReactNode {
-                const formProps: FormComponentProps<TForm> = {
-                    form: this.get(),
-                    formInit: (init) => this.set(this.formInit(init)),
-                    formUpdate: (form) => this.set(this.formUpdate(form)),
-                    formSetErrors: (errors) => this.set(this.formSetErrors(errors)),
-                };
-                return (
-                    <WrappedComponent
-                        {...this.props}
-                        {...formProps} />
-                );
             }
         }
         return FormComponent;

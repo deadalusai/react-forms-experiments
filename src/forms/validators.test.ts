@@ -10,7 +10,6 @@ describe("forms validators", () => {
         boolField: boolean;
     }
 
-    const FORM_NAME = "test-form-name";
     const INITIAL_FORM_DATA: TestFormData = Object.freeze({
         strField: "hello, world",
         numField: 1,

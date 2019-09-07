@@ -18,35 +18,33 @@ export function injectStoreBackedForm<TForm = any, TOwnProps = {}>(options: Form
         interface IActionProps {
             formUpdate: typeof FormsStore.actions.setForm;
         }
-        class FormComponent extends FormComponentBase<TForm, IStoreProps & IActionProps & TOwnProps> {
+        class FormComponent extends FormComponentBase<TForm, TOwnProps, IStoreProps & IActionProps, {}> {
             public options = options;
+            public component = WrappedComponent;
+
+            private initial: Form<TForm> | null = null;
+
+            constructor(props: any) {
+                super(props);
+                if (this.options.initial) {
+                    this.initial = this.formInit(this.options.initial);
+                }
+            }
+
+            public componentDidMount() {
+                // Push the initialized form state back to the store (will trigger re-render)
+                if (this.initial) {
+                    this.set(this.initial);
+                    this.initial = null;
+                }
+            }
 
             public get(): Form<TForm> {
-                return this.props.form;
+                return this.props.form || this.initial!;
             }
             
             public set(form: Form<TForm>): void {
                 this.props.formUpdate(form);
-            }
-
-            public render(): React.ReactNode {
-                let form = this.get();
-                // Hack: Initialise the form store for the first time (triggers a re-render)
-                if (options.initial && !form) {
-                    form = this.formInit(options.initial);
-                    this.set(form);
-                }
-                const formProps: FormComponentProps<TForm> = {
-                    form,
-                    formInit: (init) => this.set(this.formInit(init)),
-                    formUpdate: (form) => this.set(this.formUpdate(form)),
-                    formSetErrors: (errors) => this.set(this.formSetErrors(errors)),
-                };
-                return (
-                    <WrappedComponent
-                        {...this.props}
-                        {...formProps} />
-                );
             }
         }
         const connector = connect<IStoreProps, IActionProps, TOwnProps, any>(
