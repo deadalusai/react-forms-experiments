@@ -114,6 +114,21 @@ describe("forms component", () => {
                 expect(form.fields.boolField.meta.error).toEqual({ error: "BOOLEAN", params: undefined, sticky: false });
                 expect(form.fields.numField.meta.error).toEqual({ error: "NUMBER", params: undefined, sticky: false });
             });
+
+            it("should not set form errors if no validator is configured", () => {
+                // Arrange
+                const options = {
+                    name: FORM_NAME,
+                };
+                const component = new MockFormComponent(OWN_PROPS, options);
+                // Act
+                const form = component.formInit(INITIAL_FORM_DATA);
+                // Assert
+                expect(form).toBeDefined();
+                expect(form.fields.strField.meta.error).toBeNull();
+                expect(form.fields.boolField.meta.error).toBeNull();
+                expect(form.fields.numField.meta.error).toBeNull();
+            });
         });
 
         describe("formUpdate", () => {
@@ -215,6 +230,29 @@ describe("forms component", () => {
                 expect(newFormState.fields.strField.meta.error).toEqual(
                     { error: "INVALID", params: undefined, sticky: false }
                 );
+            });
+
+            it("should not pass through to updateFormErrors when no validator is declared", () => {
+                // Arrange
+                const options = {
+                    name: FORM_NAME,
+                };
+                const component = new MockFormComponent(OWN_PROPS, options);
+                component.formState = initialFormState;
+                const update: FieldUpdate<string, ExampleFormData> = {
+                    name: "strField",
+                    type: "CHANGE",
+                    value: "INVALID",
+                };
+                // Act
+                const newFormState = component.formUpdate(update);
+                // Assert
+                expect(mockValidator).not.toHaveBeenCalled();
+                expect(newFormState).toEqual(
+                    formUpdateField(initialFormState, update),
+                );
+                expect(newFormState.fields.strField.meta.valid).toEqual(true);
+                expect(newFormState.fields.strField.meta.error).toBeNull();
             });
 
             it("should pass throught to formUpdateAll when given a FormUpdate", () => {

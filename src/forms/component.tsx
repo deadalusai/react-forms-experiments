@@ -29,9 +29,12 @@ export abstract class FormComponentBase<TForm, TOwnProps, TWrapperProps, TState 
 
     public formInit(initial: TForm): Form<TForm> {
         let form = formInit<TForm>(this.options.name, initial);
-        const errors = this.options.validator && this.options.validator(form.current) || {};
-        const event: FormUpdateErrorsEvent = { type: "INIT" };
-        return formUpdateErrors(form, errors, event);
+        if (this.options.validator) {
+            const errors = this.options.validator(form.current);
+            const event: FormUpdateErrorsEvent = { type: "INIT" };
+            form = formUpdateErrors(form, errors, event);
+        }
+        return form;
     }
 
     public formUpdate(update: FormUpdate | FieldUpdate<any, TForm>): Form<TForm> {
@@ -43,8 +46,8 @@ export abstract class FormComponentBase<TForm, TOwnProps, TWrapperProps, TState 
             // Field update
             form = formUpdateField(form, update);
             // Apply validation only on events which change a value in the form
-            if ("value" in update) {
-                const errors = this.options.validator && this.options.validator(form.current) || {};
+            if ("value" in update && this.options.validator) {
+                const errors = this.options.validator(form.current);
                 const event: FormUpdateErrorsEvent = { type: "CHANGE", fieldName: update.name as string };
                 form = formUpdateErrors(form, errors, event);
             }
