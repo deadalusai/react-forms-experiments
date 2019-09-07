@@ -34,7 +34,7 @@ export abstract class FormComponentBase<TForm, TOwnProps, TWrapperProps, TState 
         return formUpdateErrors(form, errors, event);
     }
 
-    public formUpdate(update: FormUpdate | FieldUpdate<TForm>): Form<TForm> {
+    public formUpdate(update: FormUpdate | FieldUpdate<any, TForm>): Form<TForm> {
         let form = this.get();
         if (!form) {
             throw new Error("Called formUpdate before formInit");
@@ -69,7 +69,7 @@ export abstract class FormComponentBase<TForm, TOwnProps, TWrapperProps, TState 
         const formProps: FormComponentProps<TForm> = {
             form: this.get(),
             formInit: (init) => this.set(this.formInit(init)),
-            formUpdate: (form) => this.set(this.formUpdate(form)),
+            formUpdate: (update) => this.set(this.formUpdate(update)),
             formSetErrors: (errors) => this.set(this.formSetErrors(errors)),
         };
         const Component = this.component;
