@@ -94,7 +94,7 @@ export function injectStateBackedForm<TForm = any, TOwnProps = {}>(options: Form
             public options = options;
             public component = WrappedComponent;
 
-            constructor(props: any) {
+            constructor(props: TOwnProps) {
                 super(props);
                 if (this.options.initial) {
                     const form = this.formInit(this.options.initial);
@@ -103,7 +103,7 @@ export function injectStateBackedForm<TForm = any, TOwnProps = {}>(options: Form
             }
 
             public get(): Form<TForm> {
-                return this.state.form;
+                return this.state && this.state.form;
             }
 
             public set(form: Form<TForm>): void {

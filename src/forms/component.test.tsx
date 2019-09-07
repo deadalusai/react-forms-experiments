@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { FormComponentBase, FormOptions, FormComponentProps } from "./component";
+import { FormComponentBase, FormOptions, FormComponentProps, injectStateBackedForm } from "./component";
 import { Form, FieldUpdate, FormUpdate, FormErrors, FormUpdateErrorsEvent, formInit, formUpdateField, formUpdateErrors, formUpdateAll } from './core';
 import { FormValidator } from './validators';
 
@@ -19,24 +19,24 @@ describe("forms component", () => {
         boolField: true,
     });
 
-    describe("FormComponentBase", () => {
-
-        // Represents the end-users "form" component, which is wrapped by the FormComponentBase high-order component
-        interface ExampleFormComponentProps {
-            foo: number;
-            bar: string;
+    // Represents the end-users "form" component, which is wrapped by the FormComponentBase high-order component
+    interface ExampleFormComponentProps {
+        foo: number;
+        bar: string;
+    }
+    class ExampleFormComponent extends React.Component<ExampleFormComponentProps & FormComponentProps<ExampleFormData>> {
+        public render() {
+            return <div />;
         }
-        class ExampleFormComponent extends React.Component<ExampleFormComponentProps & FormComponentProps<ExampleFormData>> {
-            public render() {
-                return <div />;
-            }
-        }
+    }
         
-        // Props to be passed *through* to `TestFormComponent`
-        const OWN_PROPS: ExampleFormComponentProps = {
-            foo: 100,
-            bar: "bar",
-        };
+    // Props to be passed *through* to `TestFormComponent`
+    const OWN_PROPS: ExampleFormComponentProps = {
+        foo: 100,
+        bar: "bar",
+    };
+
+    describe("FormComponentBase", () => {
 
         // Mock subclass of FormComponentBase to instrument testing of the abstract base class routines
         class MockFormComponent extends FormComponentBase<ExampleFormData, ExampleFormComponentProps, {}, {}> {
@@ -413,6 +413,105 @@ describe("forms component", () => {
                     expect(component.formSetErrors).toHaveBeenCalledWith(arg);
                     expect(component.formState).toBe(newState);
                 });
+            });
+        });
+    });
+
+    describe("injectStateBackedForm", () => {
+
+        it("should pass through own props", () => {
+            // Arrange
+            const options = {
+                name: FORM_NAME,
+                initial: INITIAL_FORM_DATA,
+            };
+            const factory = injectStateBackedForm<ExampleFormData, ExampleFormComponentProps>(options);
+            const Component = factory(ExampleFormComponent);
+            // Act
+            const instance = new Component(OWN_PROPS);
+            const renderTree = instance.render() as React.ReactElement;
+            // Assert
+            expect(renderTree).toBeDefined();
+            expect(renderTree.type).toBe(ExampleFormComponent);
+            expect(renderTree.props.foo).toEqual(OWN_PROPS.foo);
+            expect(renderTree.props.bar).toEqual(OWN_PROPS.bar);
+        });
+
+        it("should not init the form state if an initial state is not provided", () => {
+            // Arrange
+            const options = {
+                name: FORM_NAME,
+            };
+            const factory = injectStateBackedForm<ExampleFormData, ExampleFormComponentProps>(options);
+            const Component = factory(ExampleFormComponent);
+            // Act
+            const instance = new Component(OWN_PROPS);
+            // Assert
+            expect(instance.state).not.toBeDefined();
+        });
+
+        it("should init the form state if an initial state is provided", () => {
+            // Arrange
+            const options = {
+                name: FORM_NAME,
+                initial: INITIAL_FORM_DATA,
+            };
+            const factory = injectStateBackedForm<ExampleFormData, ExampleFormComponentProps>(options);
+            const Component = factory(ExampleFormComponent);
+            // Act
+            const instance = new Component(OWN_PROPS);
+            // Assert
+            expect(instance.state).toBeDefined();
+            expect(instance.state.form).toBeDefined();
+            expect(instance.state.form.current).toEqual(INITIAL_FORM_DATA);
+        });
+
+        describe("get", () => {
+            it("should retrieve the current state when not initialized", () => {
+                // Arrange
+                const options = {
+                    name: FORM_NAME,
+                };
+                const factory = injectStateBackedForm<ExampleFormData, ExampleFormComponentProps>(options);
+                const Component = factory(ExampleFormComponent);
+                // Act
+                const instance = new Component(OWN_PROPS);
+                // Assert
+                expect(instance.get()).toBeUndefined();
+            });
+
+            it("should retrieve the current state when initialized", () => {
+                // Arrange
+                const expectedForm = formInit(FORM_NAME, INITIAL_FORM_DATA);
+                const options = {
+                    name: FORM_NAME,
+                    initial: INITIAL_FORM_DATA,
+                };
+                const factory = injectStateBackedForm<ExampleFormData, ExampleFormComponentProps>(options);
+                const Component = factory(ExampleFormComponent);
+                // Act
+                const instance = new Component(OWN_PROPS);
+                // Assert
+                expect(instance.get()).toEqual(expectedForm);
+            });
+        });
+
+        describe("set", () => {
+            it("should update the component state", () => {
+                // Arrange
+                const formData = formInit(FORM_NAME, INITIAL_FORM_DATA);
+                const options = {
+                    name: FORM_NAME
+                };
+                const factory = injectStateBackedForm<ExampleFormData, ExampleFormComponentProps>(options);
+                const Component = factory(ExampleFormComponent);
+                const instance = new Component(OWN_PROPS);
+                // Component is unmounted so we need to mock setState
+                instance.setState = jest.fn();
+                // Act
+                instance.set(formData);
+                // Assert
+                expect(instance.setState).toHaveBeenCalledWith({ form: formData });
             });
         });
     });

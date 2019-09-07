@@ -24,7 +24,7 @@ export function injectStoreBackedForm<TForm = any, TOwnProps = {}>(options: Form
 
             private initial: Form<TForm> | null = null;
 
-            constructor(props: any) {
+            constructor(props: TOwnProps & IStoreProps & IActionProps) {
                 super(props);
                 if (this.options.initial) {
                     this.initial = this.formInit(this.options.initial);
