@@ -207,7 +207,7 @@ export class MyFormView extends React.Component<MyFormViewProps, ComponentState>
 
     public submit(form: Form<MyForm>) {
         this.props.formUpdate({ visited: true, submitted: true });
-        if (!this.state.text1Validating && !form.meta.valid) {
+        if (!form.meta.valid || this.state.text1Validating) {
             return;
         }
         this.props.saveChanges(this.props.formName, form.current);
@@ -245,7 +245,7 @@ const options: FormOptions<MyForm> = {
 
 // Store-backed variant of this form
 // NOTE: Need to union in `StoreFormProps` because `compose` loses that context
-const wrap = compose<React.ComponentClass<OwnProps & FormNameProps>>(
+const wrapStoreForm = compose<React.ComponentClass<OwnProps & FormNameProps>>(
     injectStoreBackedForm<MyForm, OwnProps>(options),
     connect<StateProps, ActionProps, OwnProps & FormNameProps, RootState>(
         (_state) => ({
@@ -256,7 +256,19 @@ const wrap = compose<React.ComponentClass<OwnProps & FormNameProps>>(
         }
     )
 );
-export const MyFormViewStoreBacked = wrap(MyFormView);
+export const MyFormViewStoreBacked = wrapStoreForm(MyFormView);
 
 // State-backed variant of this form
-export const MyFormViewStateBacked = injectStateBackedForm<MyForm, OwnProps>(options)(MyFormView);
+// NOTE: Need to union in `StoreFormProps` because `compose` loses that context
+const wrapStateForm = compose<React.ComponentClass<OwnProps & FormNameProps>>(
+    injectStateBackedForm<MyForm, OwnProps>(options),
+    connect<StateProps, ActionProps, OwnProps & FormNameProps, RootState>(
+        (_state) => ({
+            submitting: _state.myform.submitting,
+        }),
+        {
+            saveChanges: MyFormActions.saveChanges,
+        }
+    )
+);
+export const MyFormViewStateBacked = wrapStateForm(MyFormView);
