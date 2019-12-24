@@ -206,8 +206,8 @@ export class MyFormView extends React.Component<MyFormViewProps, ComponentState>
     }
 
     public submit(form: Form<MyForm>) {
+        this.props.formUpdate({ visited: true, submitted: true });
         if (!this.state.text1Validating && !form.meta.valid) {
-            this.props.formUpdate({ visited: true });
             return;
         }
         this.props.saveChanges(this.props.formName, form.current);

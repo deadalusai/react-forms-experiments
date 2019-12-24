@@ -44,6 +44,7 @@ describe("forms core", () => {
                     touched: false,
                     focused: false,
                     dirty: false,
+                    submitted: false,
                     error: null,
                 });
             }
@@ -53,6 +54,7 @@ describe("forms core", () => {
                 valid: true,
                 touched: false,
                 dirty: false,
+                submitted: false,
                 focused: null,
             });
         });
@@ -216,6 +218,7 @@ describe("forms core", () => {
                         touched: true,
                         visited: true,
                         valid: false,
+                        submitted: false,
                         error: {
                             error: "ERROR.TO_BE_CLEARED",
                             params: undefined,
@@ -232,6 +235,7 @@ describe("forms core", () => {
                         touched: true,
                         visited: true,
                         valid: false,
+                        submitted: false,
                         error: {
                             error: "ERROR.TO_BE_CLEARED",
                             params: undefined,
@@ -248,6 +252,7 @@ describe("forms core", () => {
                         touched: true,
                         visited: true,
                         valid: false,
+                        submitted: false,
                         error: {
                             error: "ERROR.TO_BE_RETAINED_AS_STICKY",
                             params: undefined,
@@ -262,6 +267,7 @@ describe("forms core", () => {
                 touched: true,
                 visited: true,
                 focused: null,
+                submitted: false,
             },
         };
         const EVENT_SPECS = [
@@ -360,6 +366,21 @@ describe("forms core", () => {
             expect(form.fields.numField.meta.touched).toEqual(true);
             expect(form.fields.boolField.meta.touched).toEqual(true);
             expect(form.meta.touched).toEqual(true);
+        });
+
+        it("should set submitted on all fields", () => {
+            // Arrange
+            const oldForm = formInit(INITIAL_FORM_DATA);
+            const formUpdate: FormUpdate = {
+                submitted: true,
+            };
+            // Act
+            const form = formUpdateAll(oldForm, formUpdate);
+            // Assert
+            expect(form.fields.strField.meta.submitted).toEqual(true);
+            expect(form.fields.numField.meta.submitted).toEqual(true);
+            expect(form.fields.boolField.meta.submitted).toEqual(true);
+            expect(form.meta.submitted).toEqual(true);
         });
     });
 });

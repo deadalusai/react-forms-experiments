@@ -21,6 +21,7 @@ export interface FieldMeta {
     readonly touched: boolean;
     readonly focused: boolean;
     readonly dirty: boolean;
+    readonly submitted: boolean;
     readonly error: FieldError | null;
 }
 
@@ -29,6 +30,7 @@ export interface FormMeta {
     readonly visited: boolean;
     readonly touched: boolean;
     readonly dirty: boolean;
+    readonly submitted: boolean;
     readonly focused: string | null; // The name of the field which currently holds focus
 }
 
@@ -70,6 +72,7 @@ export function formInit<TForm>(initial: TForm): Form<TForm> {
             touched: false,
             focused: false,
             dirty: false,
+            submitted: false,
             error: null,
         };
         fields[name] = { name, value, meta };
@@ -83,6 +86,7 @@ export function formInit<TForm>(initial: TForm): Form<TForm> {
             valid: true,
             touched: false,
             dirty: false,
+            submitted: false,
             focused: null,
         },
     };
@@ -201,6 +205,7 @@ export function formUpdateErrors<TForm>(form: Form<TForm>, errorMap: FormErrors<
 export interface FormUpdate {
     touched?: boolean;
     visited?: boolean;
+    submitted?: boolean;
 }
 
 /**
@@ -219,6 +224,7 @@ export function formUpdateAll<TForm>(form: Form<TForm>, update: FormUpdate): For
                 ...field.meta,
                 touched: "touched" in update ? update.touched! : field.meta.touched,
                 visited: "visited" in update ? update.visited! : field.meta.visited,
+                submitted: "submitted" in update ? update.submitted! : form.meta.submitted,
             }
         };
     }
@@ -228,6 +234,7 @@ export function formUpdateAll<TForm>(form: Form<TForm>, update: FormUpdate): For
             ...form.meta,
             touched: "touched" in update ? update.touched! : form.meta.touched,
             visited: "visited" in update ? update.visited! : form.meta.visited,
+            submitted: "submitted" in update ? update.submitted! : form.meta.submitted,
         },
         fields: fields as FormFields<TForm>,
     };
