@@ -17,7 +17,7 @@ export function* saveChangesSaga(action: MyFormStore.ISaveChangesAction): SagaIt
         checkbox2: { error: "ERROR.ERROR_SENT_FROM_SERVER" },
     };
     yield put(FormsStore.actions.setFormErrors(action.formName, errors));
-    yield put(MyFormStore.actionCreators.saveChangesComplete(action.formName));
+    yield put(MyFormStore.actionCreators.saveChangesComplete());
 }
 
 export function* saga(): SagaIterator {

@@ -4,13 +4,12 @@ import { compose } from "redux";
 
 import { delayMs } from "util";
 import { RootState } from "store";
-import { Form } from "forms";
+import { Form, injectStateBackedForm } from "forms";
 import { FormComponentProps, injectStoreBackedForm } from "forms/redux";
 import * as Validators from "forms/validators";
 import { InputContainer, TextInput, SelectInput, MultiSelectInput, RadioInput, CheckboxInput } from "forms/controls";
 import { MyForm, BazType, FooType, BarType, actionCreators as MyFormActions } from "store/myform";
-
-const FORM_NAME = "my-form";
+import { FormOptions, FormNameProps } from "forms/component";
 
 const BAZ_OPTIONS = [
     { label: "Baz one", value: BazType.baz1 },
@@ -71,7 +70,10 @@ const validateLengthLessThanAsync = async (value: string, expected: number) => {
         : null;
 };
 
-export interface OwnProps {}
+export interface OwnProps {
+    arg1: string;
+    arg2: number;
+}
 export interface StateProps {
     submitting: boolean;
 }
@@ -195,9 +197,10 @@ export class MyFormView extends React.Component<MyFormViewProps, ComponentState>
                         </button>
                     </div>
                 </form>
-                <pre>
-                    form: {JSON.stringify(form, null, 4)}
-                </pre>
+                <pre>arg1: {this.props.arg1}</pre>
+                <pre>arg2: {this.props.arg2}</pre>
+                <pre>formName: {this.props.formName}</pre>
+                <pre>form: {JSON.stringify(form, null, 4)}</pre>
             </section>
         );
     }
@@ -207,7 +210,7 @@ export class MyFormView extends React.Component<MyFormViewProps, ComponentState>
             this.props.formUpdate({ visited: true });
             return;
         }
-        this.props.saveChanges(form.name, form.current);
+        this.props.saveChanges(this.props.formName, form.current);
     }
 
     public reset(form: Form<MyForm>) {
@@ -223,27 +226,28 @@ export class MyFormView extends React.Component<MyFormViewProps, ComponentState>
         this.setState({ text1Validating: true });
         const error = await validateLengthLessThanAsync(text1.value, 8);
         this.setState({ text1Validating: false });
-        this.props.formSetErrors({
-            [text1.name]: error,
-        });
+        this.props.formSetErrors({ text1: error });
     }
 }
 
-const wrap = compose<React.ComponentClass<OwnProps>>(
-    injectStoreBackedForm<MyForm, OwnProps>({
-        name: FORM_NAME,
-        validator: formValidator,
-        initial: {
-            text1: "",
-            text2: "",
-            checkbox1: false,
-            checkbox2: null,
-            select1: null,
-            select2: [],
-            radio1: null,
-        }
-    }),
-    connect<StateProps, ActionProps, OwnProps, RootState>(
+const options: FormOptions<MyForm> = {
+    validator: formValidator,
+    initial: {
+        text1: "",
+        text2: "",
+        checkbox1: false,
+        checkbox2: null,
+        select1: null,
+        select2: [],
+        radio1: null,
+    }
+};
+
+// Store-backed variant of this form
+// NOTE: Need to union in `StoreFormProps` because `compose` loses that context
+const wrap = compose<React.ComponentClass<OwnProps & FormNameProps>>(
+    injectStoreBackedForm<MyForm, OwnProps>(options),
+    connect<StateProps, ActionProps, OwnProps & FormNameProps, RootState>(
         (_state) => ({
             submitting: _state.myform.submitting,
         }),
@@ -252,5 +256,7 @@ const wrap = compose<React.ComponentClass<OwnProps>>(
         }
     )
 );
+export const MyFormViewStoreBacked = wrap(MyFormView);
 
-export default wrap(MyFormView);
+// State-backed variant of this form
+export const MyFormViewStateBacked = injectStateBackedForm<MyForm, OwnProps>(options)(MyFormView);

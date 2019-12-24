@@ -60,10 +60,9 @@ const saveChangesReducer = (state: MyFormState, _action: ISaveChangesAction): My
 export const MYFORM_SAVE_CHANGES_COMPLETE = "MYFORM:SAVE_CHANGES_COMPLETE";
 export interface ISaveChangesCompleteAction {
     type: typeof MYFORM_SAVE_CHANGES_COMPLETE;
-    formName: string;
 }
-const saveChangesComplete = (formName: string): ISaveChangesCompleteAction => {
-    return { type: MYFORM_SAVE_CHANGES_COMPLETE, formName };
+const saveChangesComplete = (): ISaveChangesCompleteAction => {
+    return { type: MYFORM_SAVE_CHANGES_COMPLETE };
 };
 const saveChangesCompleteReducer = (state: MyFormState, _action: ISaveChangesCompleteAction): MyFormState => {
     return {

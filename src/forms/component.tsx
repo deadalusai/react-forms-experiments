@@ -4,23 +4,29 @@ import { Form, FormErrors, FormUpdateErrorsEvent, FormUpdate, FieldUpdate, formI
 import { FormValidator } from './validators';
 
 export interface FormOptions<TForm> {
-    /** The name of the form, global to the app */
-    name: string;
     /** A validation function for the form */
     validator?: FormValidator;
     /** The initial state of the form. To set the initial state dynamically, use `formInit` */
     initial?: TForm;
 }
 
+/** The public higher-order component form props */
+export interface FormNameProps {
+    /** The name of the form, global to the app */
+    formName: string;
+}
+
+/** The internal interface provided by the higher-order component factory */
 export interface FormComponentProps<TForm = any> {
     form: Form<TForm>;
+    formName: string;
     formInit: (initial: TForm) => void;
     formUpdate: (update: FormUpdate | FieldUpdate<any, TForm>) => void;
     formSetErrors: (errors: FormErrors<TForm>) => void;
 }
 
-export abstract class FormComponentBase<TForm, TOwnProps, TWrapperProps, TState = {}> extends React.Component<TOwnProps & TWrapperProps, TState> {
-    
+export abstract class FormComponentBase<TForm, TOwnProps, TWrapperProps, TState = {}> extends React.Component<TOwnProps & TWrapperProps & FormNameProps, TState> {
+
     public abstract options: FormOptions<TForm>;
     public abstract component: React.ComponentClass<TOwnProps & FormComponentProps<TForm>>;
 
@@ -28,7 +34,7 @@ export abstract class FormComponentBase<TForm, TOwnProps, TWrapperProps, TState 
     public abstract set(form: Form<TForm>): void;
 
     public formInit(initial: TForm): Form<TForm> {
-        let form = formInit<TForm>(this.options.name, initial);
+        let form = formInit<TForm>(initial);
         if (this.options.validator) {
             const errors = this.options.validator(form.current);
             const event: FormUpdateErrorsEvent = { type: "INIT" };
@@ -71,6 +77,7 @@ export abstract class FormComponentBase<TForm, TOwnProps, TWrapperProps, TState 
     public render(): React.ReactNode {
         const formProps: FormComponentProps<TForm> = {
             form: this.get(),
+            formName: this.props.formName,
             formInit: (init) => this.set(this.formInit(init)),
             formUpdate: (update) => this.set(this.formUpdate(update)),
             formSetErrors: (errors) => this.set(this.formSetErrors(errors)),
@@ -94,7 +101,7 @@ export function injectStateBackedForm<TForm = any, TOwnProps = {}>(options: Form
             public options = options;
             public component = WrappedComponent;
 
-            constructor(props: TOwnProps) {
+            constructor(props: TOwnProps & FormNameProps) {
                 super(props);
                 if (this.options.initial) {
                     const form = this.formInit(this.options.initial);

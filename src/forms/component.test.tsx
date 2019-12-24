@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { FormComponentBase, FormOptions, FormComponentProps, injectStateBackedForm } from "./component";
+import { FormComponentBase, FormOptions, FormComponentProps, injectStateBackedForm, FormNameProps } from "./component";
 import { Form, FieldUpdate, FormUpdate, FormErrors, FormUpdateErrorsEvent, formInit, formUpdateField, formUpdateErrors, formUpdateAll } from './core';
 import { FormValidator } from './validators';
 
@@ -12,7 +12,6 @@ describe("forms component", () => {
         boolField: boolean;
     }
 
-    const FORM_NAME = "test-form-name";
     const INITIAL_FORM_DATA: ExampleFormData = Object.freeze({
         strField: "hello, world",
         numField: 1,
@@ -29,9 +28,10 @@ describe("forms component", () => {
             return <div />;
         }
     }
-        
+
     // Props to be passed *through* to `TestFormComponent`
-    const OWN_PROPS: ExampleFormComponentProps = {
+    const OWN_PROPS: ExampleFormComponentProps & FormNameProps = {
+        formName: "test-form",
         foo: 100,
         bar: "bar",
     };
@@ -61,7 +61,6 @@ describe("forms component", () => {
             it("should initialize the form", () => {
                 // Arrange
                 const options = {
-                    name: FORM_NAME,
                     initial: INITIAL_FORM_DATA,
                 };
                 const component = new MockFormComponent(OWN_PROPS, options);
@@ -69,21 +68,20 @@ describe("forms component", () => {
                 const form = component.formInit(options.initial);
                 // Assert
                 expect(form).toBeDefined();
-                expect(form.name).toEqual(FORM_NAME);
                 expect(form.initial).toEqual(INITIAL_FORM_DATA);
-                
+
                 expect(form.fields.strField.value).toEqual(INITIAL_FORM_DATA.strField);
                 expect(form.fields.strField.meta.touched).toEqual(false);
                 expect(form.fields.strField.meta.visited).toEqual(false);
                 expect(form.fields.strField.meta.valid).toEqual(true);
                 expect(form.fields.strField.meta.error).toBeNull();
-                
+
                 expect(form.fields.boolField.value).toEqual(INITIAL_FORM_DATA.boolField);
                 expect(form.fields.boolField.meta.touched).toEqual(false);
                 expect(form.fields.boolField.meta.visited).toEqual(false);
                 expect(form.fields.boolField.meta.valid).toEqual(true);
                 expect(form.fields.boolField.meta.error).toBeNull();
-                
+
                 expect(form.fields.numField.value).toEqual(INITIAL_FORM_DATA.numField);
                 expect(form.fields.numField.meta.touched).toEqual(false);
                 expect(form.fields.numField.meta.visited).toEqual(false);
@@ -101,7 +99,6 @@ describe("forms component", () => {
                     };
                 };
                 const options = {
-                    name: FORM_NAME,
                     initial: INITIAL_FORM_DATA,
                     validator,
                 };
@@ -117,9 +114,7 @@ describe("forms component", () => {
 
             it("should not set form errors if no validator is configured", () => {
                 // Arrange
-                const options = {
-                    name: FORM_NAME,
-                };
+                const options = {};
                 const component = new MockFormComponent(OWN_PROPS, options);
                 // Act
                 const form = component.formInit(INITIAL_FORM_DATA);
@@ -132,7 +127,7 @@ describe("forms component", () => {
         });
 
         describe("formUpdate", () => {
-            
+
             let mockValidator: FormValidator;
             let initialFormState: Form<ExampleFormData>;
             beforeEach(() => {
@@ -141,14 +136,12 @@ describe("forms component", () => {
                         strField: data.strField === "INVALID" ? { error: "INVALID" } : null,
                     };
                 });
-                initialFormState = formInit(FORM_NAME, INITIAL_FORM_DATA);
+                initialFormState = formInit(INITIAL_FORM_DATA);
             });
 
             it("should throw if the form is not initialized", () => {
                 // Arrange
-                const options = {
-                    name: FORM_NAME,
-                };
+                const options = {};
                 const component = new MockFormComponent(OWN_PROPS, options);
                 component.formState = null;
                 const update: FieldUpdate<string, ExampleFormData> = {
@@ -159,7 +152,7 @@ describe("forms component", () => {
                 // Act, Assert
                 expect(() => component.formUpdate(update)).toThrowError("Called formUpdate before formInit");
             });
-            
+
             const FIELD_UPDATE_SPECS = [
                 {
                     on: "blur event",
@@ -177,9 +170,7 @@ describe("forms component", () => {
             for (const spec of FIELD_UPDATE_SPECS) {
                 it(`should pass through to updateFormField on ${spec.on}`, () => {
                     // Arrange
-                    const options = {
-                        name: FORM_NAME,
-                    };
+                    const options = {};
                     const component = new MockFormComponent(OWN_PROPS, options);
                     component.formState = initialFormState;
                     // Act
@@ -187,7 +178,7 @@ describe("forms component", () => {
                     // Assert
                     expect(mockValidator).not.toHaveBeenCalled();
                     expect(newFormState).toEqual(
-                        formUpdateField(initialFormState, spec.update)    
+                        formUpdateField(initialFormState, spec.update)
                     );
                 });
             }
@@ -195,7 +186,6 @@ describe("forms component", () => {
             it("should invoke the validator and pass through to updateFormErrors when given a value", () => {
                 // Arrange
                 const options = {
-                    name: FORM_NAME,
                     validator: mockValidator,
                 };
                 const component = new MockFormComponent(OWN_PROPS, options);
@@ -234,9 +224,7 @@ describe("forms component", () => {
 
             it("should not pass through to updateFormErrors when no validator is declared", () => {
                 // Arrange
-                const options = {
-                    name: FORM_NAME,
-                };
+                const options = {};
                 const component = new MockFormComponent(OWN_PROPS, options);
                 component.formState = initialFormState;
                 const update: FieldUpdate<string, ExampleFormData> = {
@@ -258,7 +246,6 @@ describe("forms component", () => {
             it("should pass throught to formUpdateAll when given a FormUpdate", () => {
                 // Arrange
                 const options = {
-                    name: FORM_NAME,
                     validator: mockValidator,
                 };
                 const component = new MockFormComponent(OWN_PROPS, options);
@@ -278,17 +265,15 @@ describe("forms component", () => {
         });
 
         describe("formSetErrors", () => {
-            
+
             let initialFormState: Form<ExampleFormData>;
             beforeEach(() => {
-                initialFormState = formInit(FORM_NAME, INITIAL_FORM_DATA);
+                initialFormState = formInit(INITIAL_FORM_DATA);
             });
 
             it("should throw if the form is not initialized", () => {
                 // Arrange
-                const options = {
-                    name: FORM_NAME,
-                };
+                const options = {};
                 const component = new MockFormComponent(OWN_PROPS, options);
                 component.formState = null;
                 const errors: FormErrors<ExampleFormData> = {
@@ -300,9 +285,7 @@ describe("forms component", () => {
 
             it("should pass throught to formUpdateAll when given a FormUpdate", () => {
                 // Arrange
-                const options = {
-                    name: FORM_NAME,
-                };
+                const options = {};
                 const component = new MockFormComponent(OWN_PROPS, options);
                 component.formState = initialFormState;
                 const errors: FormErrors<ExampleFormData> = {
@@ -329,17 +312,15 @@ describe("forms component", () => {
         });
 
         describe("render", () => {
-            
+
             let initialFormState: Form<ExampleFormData>;
             beforeEach(() => {
-                initialFormState = formInit(FORM_NAME, INITIAL_FORM_DATA);
+                initialFormState = formInit(INITIAL_FORM_DATA);
             });
 
             it("should pass the public API through to the wrapped component", () => {
                 // Arrange
-                const options = {
-                    name: FORM_NAME,
-                };
+                const options = {};
                 const component = new MockFormComponent(OWN_PROPS, options);
                 component.formState = initialFormState;
                 // Act
@@ -361,9 +342,7 @@ describe("forms component", () => {
             describe("props.formInit", () => {
                 it("should set the new state", () => {
                     // Arrange
-                    const options = {
-                        name: FORM_NAME,
-                    };
+                    const options = {};
                     const component = new MockFormComponent(OWN_PROPS, options);
                     const arg = new Object();
                     const newState = new Object();
@@ -380,9 +359,7 @@ describe("forms component", () => {
             describe("props.formUpdate", () => {
                 it("should set the new state", () => {
                     // Arrange
-                    const options = {
-                        name: FORM_NAME,
-                    };
+                    const options = {};
                     const component = new MockFormComponent(OWN_PROPS, options);
                     const arg = new Object();
                     const newState = new Object();
@@ -399,9 +376,7 @@ describe("forms component", () => {
             describe("props.formSetErrors", () => {
                 it("should set the new state", () => {
                     // Arrange
-                    const options = {
-                        name: FORM_NAME,
-                    };
+                    const options = {};
                     const component = new MockFormComponent(OWN_PROPS, options);
                     const arg = new Object();
                     const newState = new Object();
@@ -422,7 +397,6 @@ describe("forms component", () => {
         it("should pass through own props", () => {
             // Arrange
             const options = {
-                name: FORM_NAME,
                 initial: INITIAL_FORM_DATA,
             };
             const factory = injectStateBackedForm<ExampleFormData, ExampleFormComponentProps>(options);
@@ -439,9 +413,7 @@ describe("forms component", () => {
 
         it("should not init the form state if an initial state is not provided", () => {
             // Arrange
-            const options = {
-                name: FORM_NAME,
-            };
+            const options = {};
             const factory = injectStateBackedForm<ExampleFormData, ExampleFormComponentProps>(options);
             const Component = factory(ExampleFormComponent);
             // Act
@@ -453,7 +425,6 @@ describe("forms component", () => {
         it("should init the form state if an initial state is provided", () => {
             // Arrange
             const options = {
-                name: FORM_NAME,
                 initial: INITIAL_FORM_DATA,
             };
             const factory = injectStateBackedForm<ExampleFormData, ExampleFormComponentProps>(options);
@@ -469,9 +440,7 @@ describe("forms component", () => {
         describe("get", () => {
             it("should retrieve the current state when not initialized", () => {
                 // Arrange
-                const options = {
-                    name: FORM_NAME,
-                };
+                const options = {};
                 const factory = injectStateBackedForm<ExampleFormData, ExampleFormComponentProps>(options);
                 const Component = factory(ExampleFormComponent);
                 // Act
@@ -482,9 +451,8 @@ describe("forms component", () => {
 
             it("should retrieve the current state when initialized", () => {
                 // Arrange
-                const expectedForm = formInit(FORM_NAME, INITIAL_FORM_DATA);
+                const expectedForm = formInit(INITIAL_FORM_DATA);
                 const options = {
-                    name: FORM_NAME,
                     initial: INITIAL_FORM_DATA,
                 };
                 const factory = injectStateBackedForm<ExampleFormData, ExampleFormComponentProps>(options);
@@ -499,10 +467,8 @@ describe("forms component", () => {
         describe("set", () => {
             it("should update the component state", () => {
                 // Arrange
-                const formData = formInit(FORM_NAME, INITIAL_FORM_DATA);
-                const options = {
-                    name: FORM_NAME
-                };
+                const formData = formInit(INITIAL_FORM_DATA);
+                const options = {};
                 const factory = injectStateBackedForm<ExampleFormData, ExampleFormComponentProps>(options);
                 const Component = factory(ExampleFormComponent);
                 const instance = new Component(OWN_PROPS);

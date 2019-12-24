@@ -43,7 +43,6 @@ export type FormFields<TForm = any> = {
 };
 
 export interface Form<TForm = any> {
-    readonly name: string;
     readonly initial: Readonly<TForm>;
     readonly current: Readonly<TForm>;
     readonly fields: FormFields<TForm>;
@@ -58,11 +57,10 @@ export const keysOf = Object.keys as <T>(obj: T) => (keyof T)[];
 
 /**
  * Initialises a new form object.
- * @param name The name of the form.
  * @param initial The initial state of the form.
  * @param validator If provided, this form validator is used to calculate the initial form validation state.
  */
-export function formInit<TForm>(name: string, initial: TForm): Form<TForm> {
+export function formInit<TForm>(initial: TForm): Form<TForm> {
     const fields: Partial<FormFields<TForm>> = {};
     for (const name of keysOf(initial)) {
         const value = initial[name];
@@ -77,7 +75,6 @@ export function formInit<TForm>(name: string, initial: TForm): Form<TForm> {
         fields[name] = { name, value, meta };
     }
     return {
-        name,
         initial,
         current: initial,
         fields: fields as FormFields<TForm>,

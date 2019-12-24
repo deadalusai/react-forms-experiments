@@ -18,15 +18,16 @@ export const initialState: FormsState = {};
 const FORMS_SET_FORM = "FORMS:SET_FORM";
 export interface SetFormAction {
     type: typeof FORMS_SET_FORM;
-    form: Form;
+    formName: string;
+    formState: Form;
 }
-function setForm(form: Form): SetFormAction {
-    return { type: FORMS_SET_FORM, form };
+function setForm(formName: string, formState: Form): SetFormAction {
+    return { type: FORMS_SET_FORM, formName, formState };
 }
 function setFormReducer(state: FormsState, action: SetFormAction): FormsState {
     return {
         ...state,
-        [action.form.name]: action.form,
+        [action.formName]: action.formState,
     };
 }
 

@@ -9,7 +9,6 @@ describe("forms core", () => {
         boolField: boolean;
     }
 
-    const FORM_NAME = "test-form-name";
     const INITIAL_FORM_DATA: TestFormData = Object.freeze({
         strField: "hello, world",
         numField: 1,
@@ -24,10 +23,9 @@ describe("forms core", () => {
                 ...INITIAL_FORM_DATA
             };
             // Act
-            const form = formInit(FORM_NAME, formData);
+            const form = formInit(formData);
             // Assert
             expect(form).toBeDefined();
-            expect(form.name).toEqual(FORM_NAME);
             expect(form.initial).toEqual(formData);
             expect(form.current).toEqual(formData);
             const names = keysOf(form.fields);
@@ -64,7 +62,7 @@ describe("forms core", () => {
 
         it("should do nothing if the field is not in the form", () => {
             // Arrange
-            const oldForm = formInit(FORM_NAME, INITIAL_FORM_DATA);
+            const oldForm = formInit(INITIAL_FORM_DATA);
             const fieldUpdate: FieldUpdate<string, TestFormData> = {
                 name: "badField" as any,
                 value: "foo",
@@ -86,7 +84,7 @@ describe("forms core", () => {
                 describe(`${spec.source} events`, () => {
                     it("should set the field value", () => {
                         // Arrange
-                        const oldForm = formInit(FORM_NAME, INITIAL_FORM_DATA);
+                        const oldForm = formInit(INITIAL_FORM_DATA);
                         const fieldUpdate: FieldUpdate<string, TestFormData> = {
                             name: "strField",
                             type: spec.source,
@@ -99,10 +97,10 @@ describe("forms core", () => {
                         expect(form.current.strField).toEqual("foo");
                         expect(form.initial.strField).toEqual(INITIAL_FORM_DATA.strField);
                     });
-        
+
                     it("should set the field as dirty", () => {
                         // Arrange
-                        const oldForm = formInit(FORM_NAME, INITIAL_FORM_DATA);
+                        const oldForm = formInit(INITIAL_FORM_DATA);
                         const fieldUpdate: FieldUpdate<string, TestFormData> = {
                             name: "strField",
                             type: spec.source,
@@ -122,7 +120,7 @@ describe("forms core", () => {
 
             it("should set the field as touched", () => {
                 // Arrange
-                const oldForm = formInit(FORM_NAME, INITIAL_FORM_DATA);
+                const oldForm = formInit(INITIAL_FORM_DATA);
                 const fieldUpdate: FieldUpdate<string, TestFormData> = {
                     name: "strField",
                     type: "CHANGE",
@@ -139,7 +137,7 @@ describe("forms core", () => {
 
             it("should set the field as focused", () => {
                 // Arrange
-                const oldForm = formInit(FORM_NAME, INITIAL_FORM_DATA);
+                const oldForm = formInit(INITIAL_FORM_DATA);
                 const fieldUpdate: FieldUpdate<string, TestFormData> = {
                     name: "strField",
                     type: "FOCUS",
@@ -153,10 +151,10 @@ describe("forms core", () => {
         });
 
         describe("BLUR event", () => {
-    
+
             it("should set the field as visited", () => {
                 // Arrange
-                const oldForm = formInit(FORM_NAME, INITIAL_FORM_DATA);
+                const oldForm = formInit(INITIAL_FORM_DATA);
                 const fieldUpdate: FieldUpdate<string, TestFormData> = {
                     name: "strField",
                     type: "BLUR",
@@ -167,10 +165,10 @@ describe("forms core", () => {
                 expect(form.fields.strField.meta.visited).toEqual(true);
                 expect(form.meta.visited).toEqual(true);
             });
-    
+
             it("should clear the focused state", () => {
                 // Arrange
-                const initialForm = formInit(FORM_NAME, INITIAL_FORM_DATA);
+                const initialForm = formInit(INITIAL_FORM_DATA);
                 const focusedForm: Form<TestFormData> = {
                     ...initialForm,
                     fields: {
@@ -207,7 +205,7 @@ describe("forms core", () => {
             params: { id: 1 },
         };
         const ERRORED_FORM: Form<TestFormData> = {
-            ...formInit(FORM_NAME, INITIAL_FORM_DATA),
+            ...formInit(INITIAL_FORM_DATA),
             fields: {
                 strField: {
                     name: "strField",
@@ -336,7 +334,7 @@ describe("forms core", () => {
 
         it("should set visited on all fields", () => {
             // Arrange
-            const oldForm = formInit(FORM_NAME, INITIAL_FORM_DATA);
+            const oldForm = formInit(INITIAL_FORM_DATA);
             const formUpdate: FormUpdate = {
                 visited: true,
             };
@@ -351,7 +349,7 @@ describe("forms core", () => {
 
         it("should set touched on all fields", () => {
             // Arrange
-            const oldForm = formInit(FORM_NAME, INITIAL_FORM_DATA);
+            const oldForm = formInit(INITIAL_FORM_DATA);
             const formUpdate: FormUpdate = {
                 touched: true,
             };
