@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { FormComponentBase, FormOptions, FormComponentProps, injectStateBackedForm, FormNameProps } from "./component";
+import { FormComponentBase, FormOptions, FormComponentProps, injectStateBackedForm, FormConfigProps } from "./component";
 import { Form, FieldUpdate, FormUpdate, FormErrors, FormUpdateErrorsEvent, formInit, formUpdateField, formUpdateErrors, formUpdateAll } from './core';
 import { FormValidator } from './validators';
 
@@ -30,7 +30,7 @@ describe("forms component", () => {
     }
 
     // Props to be passed *through* to `TestFormComponent`
-    const OWN_PROPS: ExampleFormComponentProps & FormNameProps = {
+    const OWN_PROPS: ExampleFormComponentProps & FormConfigProps = {
         formName: "test-form",
         foo: 100,
         bar: "bar",
@@ -419,7 +419,7 @@ describe("forms component", () => {
             // Act
             const instance = new Component(OWN_PROPS);
             // Assert
-            expect(instance.state).not.toBeDefined();
+            expect(instance.state).toEqual({ form: null });
         });
 
         it("should init the form state if an initial state is provided", () => {
@@ -434,7 +434,7 @@ describe("forms component", () => {
             // Assert
             expect(instance.state).toBeDefined();
             expect(instance.state.form).toBeDefined();
-            expect(instance.state.form.current).toEqual(INITIAL_FORM_DATA);
+            expect(instance.state.form!.current).toEqual(INITIAL_FORM_DATA);
         });
 
         describe("get", () => {
@@ -446,7 +446,7 @@ describe("forms component", () => {
                 // Act
                 const instance = new Component(OWN_PROPS);
                 // Assert
-                expect(instance.get()).toBeUndefined();
+                expect(instance.get()).toBeNull();
             });
 
             it("should retrieve the current state when initialized", () => {

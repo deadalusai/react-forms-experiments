@@ -9,7 +9,7 @@ import { FormComponentProps, injectStoreBackedForm } from "forms/redux";
 import * as Validators from "forms/validators";
 import { InputContainer, TextInput, SelectInput, MultiSelectInput, RadioInput, CheckboxInput } from "forms/controls";
 import { MyForm, BazType, FooType, BarType, actionCreators as MyFormActions } from "store/myform";
-import { FormOptions, FormNameProps } from "forms/component";
+import { FormOptions, FormConfigProps } from "forms/component";
 
 const BAZ_OPTIONS = [
     { label: "Baz one", value: BazType.baz1 },
@@ -245,9 +245,9 @@ const options: FormOptions<MyForm> = {
 
 // Store-backed variant of this form
 // NOTE: Need to union in `StoreFormProps` because `compose` loses that context
-const wrapStoreForm = compose<React.ComponentClass<OwnProps & FormNameProps>>(
+const wrapStoreForm = compose<React.ComponentClass<OwnProps & FormConfigProps>>(
     injectStoreBackedForm<MyForm, OwnProps>(options),
-    connect<StateProps, ActionProps, OwnProps & FormNameProps, RootState>(
+    connect<StateProps, ActionProps, OwnProps & FormConfigProps, RootState>(
         (_state) => ({
             submitting: _state.myform.submitting,
         }),
@@ -260,9 +260,9 @@ export const MyFormViewStoreBacked = wrapStoreForm(MyFormView);
 
 // State-backed variant of this form
 // NOTE: Need to union in `StoreFormProps` because `compose` loses that context
-const wrapStateForm = compose<React.ComponentClass<OwnProps & FormNameProps>>(
+const wrapStateForm = compose<React.ComponentClass<OwnProps & FormConfigProps>>(
     injectStateBackedForm<MyForm, OwnProps>(options),
-    connect<StateProps, ActionProps, OwnProps & FormNameProps, RootState>(
+    connect<StateProps, ActionProps, OwnProps & FormConfigProps, RootState>(
         (_state) => ({
             submitting: _state.myform.submitting,
         }),

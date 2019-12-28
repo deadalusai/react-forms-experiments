@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 
 import { Form } from "../core";
 import * as FormsStore from "./store";
-import { FormOptions, FormComponentProps, FormNameProps, FormComponentBase } from "../component";
+import { FormOptions, FormComponentProps, FormConfigProps, FormComponentBase } from "../component";
 
 function noFormName(): never {
     throw new Error("Store-backed form has no name");
@@ -22,23 +22,18 @@ export function injectStoreBackedForm<TForm = any, TOwnProps = {}>(options: Form
         interface IActionProps {
             setForm: (form: Form<TForm>) => void;
         }
-        class FormComponent extends FormComponentBase<TForm, TOwnProps, IStoreProps & IActionProps, {}> {
+        class StoreFormComponent extends FormComponentBase<TForm, TOwnProps, IStoreProps & IActionProps, {}> {
             public options = options;
             public component = WrappedComponent;
-
-            private initial: Form<TForm> | null = null;
-
-            constructor(props: TOwnProps & IStoreProps & IActionProps & FormNameProps) {
-                super(props);
-                if (this.options.initial) {
-                    this.initial = this.formInit(this.options.initial);
-                }
-            }
+            private initial = this.options.initial && this.formInit(this.options.initial) || null;
 
             public componentDidMount() {
-                // Push the initialized form state back to the store (will trigger re-render)
                 if (this.initial) {
-                    this.set(this.initial);
+                    const shouldInit = !this.props.form || this.props.formForceInitOnMount;
+                    if (shouldInit) {
+                        // Push the initial form state back to the store (will trigger re-render)
+                        this.set(this.initial);
+                    }
                     this.initial = null;
                 }
             }
@@ -54,7 +49,7 @@ export function injectStoreBackedForm<TForm = any, TOwnProps = {}>(options: Form
                 this.props.setForm(form);
             }
         }
-        const connector = connect<IStoreProps, IActionProps, TOwnProps & FormNameProps, any>(
+        const connector = connect<IStoreProps, IActionProps, TOwnProps & FormConfigProps, any>(
             (rootState, ownProps) => {
                 const formName = ownProps.formName || noFormName();
                 const form = rootState["forms"][formName];
@@ -68,6 +63,6 @@ export function injectStoreBackedForm<TForm = any, TOwnProps = {}>(options: Form
                 return { setForm };
             }
         );
-        return connector(FormComponent as any);
+        return connector(StoreFormComponent as any);
     };
 }

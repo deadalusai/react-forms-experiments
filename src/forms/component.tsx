@@ -11,21 +11,27 @@ export interface FormOptions<TForm> {
 }
 
 /** The public higher-order component form props */
-export interface FormNameProps {
+export interface FormConfigProps {
     /** The name of the form, global to the app */
     formName: string;
+    /**
+     * If set, forces the form component to be always re-initialize when mounted.
+     * NOTE: Only applicable to store-backed forms.
+     */
+    formForceInitOnMount?: boolean;
 }
 
 /** The internal interface provided by the higher-order component factory */
 export interface FormComponentProps<TForm = any> {
     form: Form<TForm>;
     formName: string;
+    formForceInitOnMount: boolean,
     formInit: (initial: TForm) => void;
     formUpdate: (update: FormUpdate | FieldUpdate<any, TForm>) => void;
     formSetErrors: (errors: FormErrors<TForm>) => void;
 }
 
-export abstract class FormComponentBase<TForm, TOwnProps, TWrapperProps, TState = {}> extends React.Component<TOwnProps & TWrapperProps & FormNameProps, TState> {
+export abstract class FormComponentBase<TForm, TOwnProps, TWrapperProps, TState = {}> extends React.Component<TOwnProps & TWrapperProps & FormConfigProps, TState> {
 
     public abstract options: FormOptions<TForm>;
     public abstract component: React.ComponentClass<TOwnProps & FormComponentProps<TForm>>;
@@ -78,6 +84,7 @@ export abstract class FormComponentBase<TForm, TOwnProps, TWrapperProps, TState 
         const formProps: FormComponentProps<TForm> = {
             form: this.get(),
             formName: this.props.formName,
+            formForceInitOnMount: this.props.formForceInitOnMount as boolean || false,
             formInit: (init) => this.set(this.formInit(init)),
             formUpdate: (update) => this.set(this.formUpdate(update)),
             formSetErrors: (errors) => this.set(this.formSetErrors(errors)),
@@ -95,29 +102,27 @@ export abstract class FormComponentBase<TForm, TOwnProps, TWrapperProps, TState 
 export function injectStateBackedForm<TForm = any, TOwnProps = {}>(options: FormOptions<TForm>) {
     return (WrappedComponent: React.ComponentClass<TOwnProps & FormComponentProps<TForm>>) => {
         interface IState {
-            form: Form<TForm>;
+            form: Form<TForm> | null;
         }
-        class FormComponent extends FormComponentBase<TForm, TOwnProps, {}, IState> {
+        class StateFormComponent extends FormComponentBase<TForm, TOwnProps, {}, IState> {
             public options = options;
             public component = WrappedComponent;
-
-            constructor(props: TOwnProps & FormNameProps) {
-                super(props);
-                if (this.options.initial) {
-                    const form = this.formInit(this.options.initial);
-                    this.state = { form };
-                }
-            }
+            public state = {
+                form: this.options.initial && this.formInit(this.options.initial) || null
+            };
 
             public get(): Form<TForm> {
-                return this.state && this.state.form;
+                // NOTE: this may return `null` if the consumer opts not to provide intial
+                // form state, but is typed as non-null as this is the primary use-case.
+                // Those consumers must null-check the form prop before rendering and call formInit manually.
+                return this.state.form!;
             }
 
             public set(form: Form<TForm>): void {
                 this.setState({ form });
             }
         }
-        return FormComponent;
+        return StateFormComponent;
     };
 }
 

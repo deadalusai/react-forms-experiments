@@ -6,18 +6,19 @@ import { MyFormViewStoreBacked, MyFormViewStateBacked } from "components/myform"
 
 enum Page { facts, customFormsStoreBacked, customFormsStateBacked, reduxForms }
 
+const TABS = [
+    { label: "Facts", page: Page.facts },
+    { label: "Custom Forms (Store backed)", page: Page.customFormsStoreBacked },
+    { label: "Custom Forms (State backed)", page: Page.customFormsStateBacked },
+    { label: "Redux forms", page: Page.reduxForms },
+];
+
 export function App() {
     const [page, setPage] = React.useState(Page.customFormsStoreBacked);
-    const tabs = [
-        { label: "Facts", page: Page.facts },
-        { label: "Custom Forms (Store backed)", page: Page.customFormsStoreBacked },
-        { label: "Custom Forms (State backed)", page: Page.customFormsStateBacked },
-        { label: "Redux forms", page: Page.reduxForms },
-    ];
     return <>
         <header>
             <ul className="action-menu">
-                {tabs.map((tab) =>
+                {TABS.map((tab) =>
                     <li key={tab.page}>
                         <button
                             style={{ textDecoration: (page == tab.page ? "underline" : undefined) }}
@@ -30,10 +31,10 @@ export function App() {
         </header>
         <section>
             {(
-                page === Page.facts ? <FactsView /> :
+                page === Page.facts                  ? <FactsView /> :
                 page === Page.customFormsStoreBacked ? <MyFormViewStoreBacked formName="my-form-global" arg1="hello" arg2={1} /> :
-                page === Page.customFormsStateBacked ? <MyFormViewStateBacked formName="my-form-state" arg1="world" arg2={2} /> :
-                page === Page.reduxForms ? <ReduxFormView /> : null
+                page === Page.customFormsStateBacked ? <MyFormViewStateBacked formName="my-form-state"  arg1="world" arg2={2} /> :
+                page === Page.reduxForms             ? <ReduxFormView /> : null
             )}
         </section>
     </>;
