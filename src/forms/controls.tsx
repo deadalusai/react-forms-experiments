@@ -255,17 +255,19 @@ export interface CheckboxInputProps {
     className?: string;
     disabled?: boolean;
     label?: React.ReactNode;
-    values?: { checked: any, unchecked: any };
+    checkedProvider?: (value: any) => boolean;
+    valueProvider?: (checked: boolean) => any;
     field: Field;
     fieldUpdate: (update: FieldUpdate) => void;
     onChange?: (value: any) => void;
     onFocus?: () => void;
     onBlur?: () => void;
 }
-export function CheckboxInput({ className, disabled, label, values, field, fieldUpdate, onFocus, onBlur, onChange }: CheckboxInputProps) {
-    // If no "checked/unchecked" values are provided fall back to a true/false flipflop
-    const { checked: checkedValue, unchecked: uncheckedValue } = values || { checked: true, unchecked: false };
-    const isChecked = field.value === checkedValue;
+export function CheckboxInput({ className, disabled, label, valueProvider, checkedProvider, field, fieldUpdate, onFocus, onBlur, onChange }: CheckboxInputProps) {
+    // If no value provider is given fall back to a true/false flipflop
+    const valueProvider_ = valueProvider || (checked => checked);
+    const checkedProvider_ = checkedProvider || (value => value == valueProvider_(true));
+    const isChecked = checkedProvider_(field.value);
     return (
         <label className="checkbox-item">
             <input
@@ -283,7 +285,7 @@ export function CheckboxInput({ className, disabled, label, values, field, field
                     onBlur && onBlur();
                 }}
                 onChange={() => {
-                    const value = isChecked ? uncheckedValue : checkedValue;
+                    const value = valueProvider_(!isChecked);
                     fieldUpdate({ name: field.name, type: "CHANGE", value });
                     onChange && onChange(value);
                 }} />

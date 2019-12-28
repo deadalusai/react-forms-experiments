@@ -108,7 +108,7 @@ describe("forms validators", () => {
         type ValidatorFactory<TArgs extends any[]> = (...args: TArgs) => (value: any) => FieldError | null;
         function validatorSpec<TArgs extends any[]>(validatorFactory: ValidatorFactory<TArgs>, args: TArgs, testCases: ValidatorTestCase[]) {
             const name = `${validatorFactory.name}(${args.map(a => a instanceof RegExp ? `/${a.source}/${a.flags}` : JSON.stringify(a)).join(", ")})`;
-            return { 
+            return {
                 name,
                 validator: validatorFactory(...args),
                 testCases,
@@ -122,6 +122,8 @@ describe("forms validators", () => {
                 { value: undefined, expectedError: "ERROR.REQUIRED" },
                 { value: "",        expectedError: "ERROR.REQUIRED" },
                 { value: "   ",     expectedError: "ERROR.REQUIRED" },
+                { value: [],        expectedError: "ERROR.REQUIRED" },
+                { value: ["hello"], expectedError: null },
             ]),
             validatorSpec(Validators.required, ["ERROR.CUSTOM"], [
                 { value: "hello",   expectedError: null },

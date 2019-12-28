@@ -1,25 +1,26 @@
 import { ActionsFrom } from "util";
 
 export enum FooType {
-    foo1 = 1, 
-    foo2 = 2, 
+    foo1 = 1,
+    foo2 = 2,
     foo3 = 3,
 }
 export enum BarType {
-    bar1 = "first", 
-    bar2 = "second", 
+    bar1 = "first",
+    bar2 = "second",
     bar3 = "third",
 }
 export enum BazType {
-    baz1 = "aaa", 
-    baz2 = "bbb", 
+    baz1 = "aaa",
+    baz2 = "bbb",
     baz3 = "ccc",
 }
 export interface MyForm {
     text1: string;
     text2: string;
     checkbox1: boolean;
-    checkbox2: BazType | null;
+    checkbox2: BazType[];
+    checkbox3: BazType | null;
     select1: FooType | null;
     select2: FooType[];
     radio1: BarType | null;

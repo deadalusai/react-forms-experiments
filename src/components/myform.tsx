@@ -40,6 +40,7 @@ const formFieldValidator = Validators.createFormValidator<MyForm>({
     ],
     checkbox1: Validators.required(),
     checkbox2: Validators.required(),
+    checkbox3: Validators.required(),
     select1: [
         Validators.required(),
         Validators.greaterThan(1),
@@ -89,10 +90,7 @@ export type MyFormViewProps = StateProps & ActionProps & OwnProps & FormComponen
 
 export class MyFormView extends React.Component<MyFormViewProps, ComponentState> {
 
-    constructor(props: any, context: any) {
-        super(props, context);
-        this.state = { text1Validating: false };
-    }
+    public state = { text1Validating: false };
 
     public render() {
         const { form, formUpdate } = this.props;
@@ -133,14 +131,32 @@ export class MyFormView extends React.Component<MyFormViewProps, ComponentState>
                     </InputContainer>
 
                     <InputContainer
-                        label="Mutually-exclusive checkbox group"
+                        label="Checkbox group"
                         field={form.fields.checkbox2}>
                         {BAZ_OPTIONS.map((option) => (
                             <CheckboxInput
                                 key={option.value}
                                 label={option.label}
-                                values={{ checked: option.value, unchecked: null }}
+                                checkedProvider={() => form.fields.checkbox2.value.some(v => v === option.value)}
+                                valueProvider={checked => checked
+                                    ? [ ...form.fields.checkbox2.value, option.value ]
+                                    : form.fields.checkbox2.value.filter(v => v !== option.value)}
                                 field={form.fields.checkbox2}
+                                fieldUpdate={formUpdate}
+                                disabled={disabled} />
+                        ))}
+                    </InputContainer>
+
+                    <InputContainer
+                        label="Mutually-exclusive checkbox group"
+                        field={form.fields.checkbox3}>
+                        {BAZ_OPTIONS.map((option) => (
+                            <CheckboxInput
+                                key={option.value}
+                                label={option.label}
+                                checkedProvider={() => form.fields.checkbox3.value === option.value}
+                                valueProvider={checked => checked ? option.value : null}
+                                field={form.fields.checkbox3}
                                 fieldUpdate={formUpdate}
                                 disabled={disabled} />
                         ))}
@@ -236,7 +252,8 @@ const options: FormOptions<MyForm> = {
         text1: "",
         text2: "",
         checkbox1: false,
-        checkbox2: null,
+        checkbox2: [],
+        checkbox3: null,
         select1: null,
         select2: [],
         radio1: null,

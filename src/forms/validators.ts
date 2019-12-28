@@ -12,7 +12,7 @@ export type FieldValidatorMap<TForm = any> = {
 
 /**
  * Creates a form validation function from a map of field-specific validation functions.
- * 
+ *
  * @param fieldValidators A map of field-specific validation functions
  */
 export function createFormValidator<TForm>(fieldValidators: FieldValidatorMap<TForm>): FormValidator<TForm> {
@@ -37,7 +37,7 @@ export function createFormValidator<TForm>(fieldValidators: FieldValidatorMap<TF
 /**
  * Creates a field validator from the given list of field validators.
  * Each validator is applied in turn until one returns an error, or all validators are exhausted.
- * 
+ *
  * @param validators An array of field validators
  */
 export function combineValidators<TValue>(validators: FieldValidator<TValue>[]): FieldValidator<TValue> {
@@ -57,7 +57,19 @@ export function combineValidators<TValue>(validators: FieldValidator<TValue>[]):
 //
 
 export function required(error = "ERROR.REQUIRED"): FieldValidator {
-    return value => (value === null || value === undefined || /^\s*$/.test(value)) ? { error, params: { value } } : null;
+    return value => {
+        const isRequired =
+            // General handling
+            value === null ||
+            value === undefined ||
+            // String handling
+            (typeof value === 'string' && /^\s*$/.test(value)) ||
+            // Array handling
+            (Array.isArray(value) && value.length === 0) ||
+            // Fallback
+            false;
+        return isRequired ? { error, params: { value } } : null;
+    };
 }
 
 export function number(error = "ERROR.MUST_BE_A_NUMBER"): FieldValidator {
