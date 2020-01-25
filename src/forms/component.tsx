@@ -110,16 +110,20 @@ export function injectStateBackedForm<TForm = any, TOwnProps = {}>(options: Form
             public state = {
                 form: this.options.initial && this.formInit(this.options.initial) || null
             };
+            // NOTE: We keep a local variable with the most current form state to allow chained
+            // set/get/set calls to stack rather than always replacing the state each time.
+            private current: Form<TForm> | null = null;
 
             public get(): Form<TForm> {
-                // NOTE: this may return `null` if the consumer opts not to provide intial
+                // NOTE: this method may return `null` if the consumer opts not to provide intial
                 // form state, but is typed as non-null as this is the primary use-case.
                 // Those consumers must null-check the form prop before rendering and call formInit manually.
-                return this.state.form!;
+                return this.current || this.state.form!;
             }
 
             public set(form: Form<TForm>): void {
-                this.setState({ form });
+                this.current = form;
+                this.setState({ form }, () => this.current = null);
             }
         }
         return StateFormComponent;

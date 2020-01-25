@@ -25,6 +25,11 @@ export function injectStoreBackedForm<TForm = any, TOwnProps = {}>(options: Form
         class StoreFormComponent extends FormComponentBase<TForm, TOwnProps, IStoreProps & IActionProps, {}> {
             public options = options;
             public component = WrappedComponent;
+            // NOTE: We keep a local variable with the most current form state to allow chained
+            // set/get/set calls to stack rather than always replacing the state each time.
+            private current: Form<TForm> | null = null;
+            // This variable holds the initial state of the form to support the first render
+            // which fires *before* componentDidMount
             private initial = this.options.initial && this.formInit(this.options.initial) || null;
 
             public componentDidMount() {
@@ -38,14 +43,19 @@ export function injectStoreBackedForm<TForm = any, TOwnProps = {}>(options: Form
                 }
             }
 
+            public componentDidUpdate() {
+                this.current = null;
+            }
+
             public get(): Form<TForm> {
                 // NOTE: this may return `null` if the consumer opts not to provide intial
                 // form state, but is typed as non-null as this is the primary use-case.
                 // Those consumers must null-check the form prop before rendering and call formInit manually.
-                return this.props.form || this.initial!;
+                return this.current || this.props.form || this.initial!;
             }
 
             public set(form: Form<TForm>): void {
+                this.current = form;
                 this.props.setForm(form);
             }
         }

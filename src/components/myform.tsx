@@ -211,6 +211,12 @@ export class MyFormView extends React.Component<MyFormViewProps, ComponentState>
                             onClick={() => this.reset(form)}>
                             Reset
                         </button>
+                        <button
+                            type="button"
+                            disabled={this.props.submitting}
+                            onClick={() => this.setFields()}>
+                            Set some fields manually
+                        </button>
                     </div>
                 </form>
                 <pre>arg1: {this.props.arg1}</pre>
@@ -219,6 +225,11 @@ export class MyFormView extends React.Component<MyFormViewProps, ComponentState>
                 <pre>form: {JSON.stringify(form, null, 4)}</pre>
             </section>
         );
+    }
+    
+    public setFields(): void {
+        this.props.formUpdate({ name: "text1", value: "Hello", type: "CHANGE" });
+        this.props.formUpdate({ name: "text2", value: "World", type: "CHANGE" });
     }
 
     public submit(form: Form<MyForm>) {
